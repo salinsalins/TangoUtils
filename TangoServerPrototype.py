@@ -126,11 +126,11 @@ class TangoServerPrototype(Device):
             return {}
 
     def read_config_from_properties(self):
-        level = self.get_device_property('log_level', self.logger.getEffectiveLevel())
-        self.logger.setLevel(level)
-        self.logger.debug('Log level has been set to %s',
-                          logging.getLevelName(self.logger.getEffectiveLevel()))
-        return self.logger
+        props = self.properties()
+        if not hasattr(self, 'config'):
+            self.config = Configuration()
+        for p in props:
+            self.config[p] = props[p]
 
     def read_config_from_file(self, default=None):
         if default is None:
