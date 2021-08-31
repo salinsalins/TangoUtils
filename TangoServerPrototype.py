@@ -146,24 +146,23 @@ class TangoServerPrototype(Device):
         return True
 
     @staticmethod
-    def config_logger(name: str = __name__, level: int = logging.DEBUG):
-        def config_logger(name: str = __name__, level: int = None):
-            if level is None:
-                if hasattr(TangoServerPrototype.config_logger, 'level'):
-                    level = TangoServerPrototype.config_logger.level
-                else:
-                    level = logging.DEBUG
-            logger = logging.getLogger(name)
-            if not logger.hasHandlers():
-                logger.propagate = False
-                logger.setLevel(level)
-                f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
-                log_formatter = logging.Formatter(f_str, datefmt='%H:%M:%S')
-                console_handler = logging.StreamHandler()
-                console_handler.setFormatter(log_formatter)
-                logger.addHandler(console_handler)
-            TangoServerPrototype.config_logger.level = logger.getEffectiveLevel()
-            return logger
+    def config_logger(name: str = __name__, level: int = None):
+        if level is None:
+            if hasattr(TangoServerPrototype.config_logger, 'level'):
+                level = TangoServerPrototype.config_logger.level
+            else:
+                level = logging.DEBUG
+        logger = logging.getLogger(name)
+        if not logger.hasHandlers():
+            logger.propagate = False
+            logger.setLevel(level)
+            f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
+            log_formatter = logging.Formatter(f_str, datefmt='%H:%M:%S')
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(log_formatter)
+            logger.addHandler(console_handler)
+        TangoServerPrototype.config_logger.level = logger.getEffectiveLevel()
+        return logger
 
     @staticmethod
     def convert_polling_status(p_s, name):
