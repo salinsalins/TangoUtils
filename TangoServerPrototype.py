@@ -130,7 +130,10 @@ class TangoServerPrototype(Device):
         if not hasattr(self, 'config'):
             self.config = Configuration()
         for p in props:
-            self.config[p] = props[p]
+            if p in self.config:
+                self.config[p] = type(self.config[p])(props[p][0])
+            else:
+                self.config[p] = props[p][0]
 
     def read_config_from_file(self, file_name=None):
         if file_name is None:
