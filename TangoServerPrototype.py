@@ -132,10 +132,10 @@ class TangoServerPrototype(Device):
         for p in props:
             self.config[p] = props[p]
 
-    def read_config_from_file(self, default=None):
-        if default is None:
-            default = self.__class__.__name__ + '.json'
-        config_file = self.get_device_property('config_file', default)
+    def read_config_from_file(self, file_name=None):
+        if file_name is None:
+            file_name = self.__class__.__name__ + '.json'
+        config_file = self.get_device_property('config_file', file_name)
         self.config = Configuration(config_file)
 
     def set_config(self):
@@ -144,9 +144,8 @@ class TangoServerPrototype(Device):
             self.logger.setLevel(self.config.get('log_level', logging.DEBUG))
             self.logger.debug('Log level has been set to %s',
                               logging.getLevelName(self.logger.getEffectiveLevel()))
-            # set other server parameters
-            # self.shot = self.config.get('shot', 0)
-            file_name = self.config.get('file_name')
+            #
+            file_name = self.config.file_name
             if file_name is None:
                 file_name = ''
             else:
@@ -213,6 +212,8 @@ class Configuration:
     def __init__(self, file_name=None, default=None):
         if default is None:
             default = {}
+        self.data = default
+        self.file_name = file_name
         if file_name is not None:
             if not self.read(file_name):
                 self.data = default
@@ -244,14 +245,16 @@ class Configuration:
             # Read config from file
             with open(file_name, 'r') as configfile:
                 self.data = json.loads(configfile.read())
-                self.__setitem__('file_name', file_name)
+                self.file_name = file_name
             return True
         except:
             return False
 
     def write(self, file_name=None):
         if file_name is None:
-            file_name = self.data['file_name']
+            file_name = self.file_name
+        if file_name is None:
+            return False
         with open(file_name, 'w') as configfile:
             configfile.write(json.dumps(self.data, indent=4))
         return True
