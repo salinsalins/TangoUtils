@@ -139,35 +139,31 @@ class TangoServerPrototype(Device):
         self.config = Configuration(config_file)
 
     def set_config(self):
-        try:
-            # set log level
-            self.logger.setLevel(self.config.get('log_level', logging.DEBUG))
-            self.logger.debug('Log level has been set to %s',
-                              logging.getLevelName(self.logger.getEffectiveLevel()))
-            #
-            file_name = self.config.file_name
-            if file_name is None:
-                file_name = ''
-            else:
-                file_name = ' from %s' % file_name
-            self.logger.debug('Configuration has been set%s' % file_name)
-            return True
-        except:
-            self.log_exception('Configuration set error')
-            return False
+        # set log level
+        self.logger.setLevel(self.config.get('log_level', logging.DEBUG))
+        self.logger.debug('Log level has been set to %s',
+                          logging.getLevelName(self.logger.getEffectiveLevel()))
+        return True
 
     @staticmethod
     def config_logger(name: str = __name__, level: int = logging.DEBUG):
-        logger = logging.getLogger(name)
-        if not logger.hasHandlers():
-            logger.propagate = False
-            logger.setLevel(level)
-            f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
-            log_formatter = logging.Formatter(f_str, datefmt='%H:%M:%S')
-            console_handler = logging.StreamHandler()
-            console_handler.setFormatter(log_formatter)
-            logger.addHandler(console_handler)
-        return logger
+        def config_logger(name: str = __name__, level: int = None):
+            if level is None:
+                if hasattr(TangoServerPrototype.config_logger, 'level'):
+                    level = TangoServerPrototype.config_logger.level
+                else:
+                    level = logging.DEBUG
+            logger = logging.getLogger(name)
+            if not logger.hasHandlers():
+                logger.propagate = False
+                logger.setLevel(level)
+                f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
+                log_formatter = logging.Formatter(f_str, datefmt='%H:%M:%S')
+                console_handler = logging.StreamHandler()
+                console_handler.setFormatter(log_formatter)
+                logger.addHandler(console_handler)
+            TangoServerPrototype.config_logger.level = logger.getEffectiveLevel()
+            return logger
 
     @staticmethod
     def convert_polling_status(p_s, name):
