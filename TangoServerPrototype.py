@@ -119,6 +119,19 @@ class TangoServerPrototype(Device):
         except:
             self.log_exception('Error writing property %s for %s' % (prop, self.get_name()))
 
+    def get_attribute_property(self, attr_name, prop_name=None):
+        db = self.device_proxy.get_device_db()
+        apr = db.get_device_attribute_property(self.get_name(), attr_name)
+        if prop_name is None:
+            return apr[attr_name]
+        return apr[attr_name][prop_name][0]
+
+    def set_attribute_property(self, attr_name, prop_name, value):
+        db = self.device_proxy.get_device_db()
+        apr = db.get_device_attribute_property(self.get_name(), attr_name)
+        apr[attr_name][prop_name] = str(value)
+        db.put_device_attribute_property(self.get_name(), apr)
+
     def properties(self, filter: str = '*'):
         # returns dictionary with device properties
         names = self.device_proxy.get_property_list(filter)
@@ -180,14 +193,6 @@ class TangoServerPrototype(Device):
         m = -1 - len(a_n)
         d_n = name[:m]
         return d_n, a_n
-
-    # def write_attribute(self, attr_name, value):
-    #     self.set_device_property(attr_name, str(value))
-    #     self.shot_number_value = value
-    #     db = self.device_proxy.get_device_db()
-    #     apr = db.get_device_attribute_property(self.device_proxy.name(), attr_name)
-    #     apr[attr_name]['__value'] = str(value)
-    #     db.put_device_attribute_property(self.device_proxy.name(), apr)
 
 def looping():
     pass
