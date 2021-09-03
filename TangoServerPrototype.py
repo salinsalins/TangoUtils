@@ -14,7 +14,7 @@ import tango
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command, pipe, device_property
 
-from Utils import config_logger
+from TangoUtils import config_logger
 
 
 class TangoServerPrototype(Device):
@@ -149,27 +149,6 @@ class TangoServerPrototype(Device):
         self.logger.debug('Log level has been set to %s',
                           logging.getLevelName(self.logger.getEffectiveLevel()))
         return True
-
-    @staticmethod
-    def config_logger(name: str = __name__, level: int = None):
-        if level is None:
-            return  config_logger(name, logging.DEBUG)
-        #     if hasattr(TangoServerPrototype.config_logger, 'level'):
-        #         level = TangoServerPrototype.config_logger.level
-        else:
-            return  config_logger(name, level)
-        #         level = logging.DEBUG
-        # logger = logging.getLogger(name)
-        # if not logger.hasHandlers():
-        #     logger.propagate = False
-        #     logger.setLevel(level)
-        #     f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
-        #     log_formatter = logging.Formatter(f_str, datefmt='%H:%M:%S')
-        #     console_handler = logging.StreamHandler()
-        #     console_handler.setFormatter(log_formatter)
-        #     logger.addHandler(console_handler)
-        # TangoServerPrototype.config_logger.level = logger.getEffectiveLevel()
-        # return logger
 
     @staticmethod
     def convert_polling_status(p_s, name):
