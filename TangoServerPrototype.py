@@ -14,7 +14,7 @@ import tango
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command, pipe, device_property
 
-from ConfigLogger import config_logger
+from Utils import config_logger
 
 
 class TangoServerPrototype(Device):
@@ -195,6 +195,7 @@ class TangoServerPrototype(Device):
 
     @staticmethod
     def split_attribute_name(name):
+        # [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
         split = name.split('/')
         a_n = split[-1]
         m = -1 - len(a_n)
