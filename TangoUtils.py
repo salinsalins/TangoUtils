@@ -1,5 +1,7 @@
 import logging
 
+import tango
+
 
 def config_logger(name: str = None, level: int = logging.DEBUG):
     if name is None:
@@ -20,6 +22,18 @@ def config_logger(name: str = None, level: int = logging.DEBUG):
         console_handler.setFormatter(log_formatter)
         logger.addHandler(console_handler)
     return logger
+
+
+# Logging to the tango log system
+# class TangoLogHandler(logging.Handler):
+#     def __init__(self):
+#         super().__init__()
+#
+#     def emit(self, record):
+#         level = logging.DEBUG
+#         log_entry = self.format(record)
+#         if level >= logging.CRITICAL:
+#             tango.server.Device.info_stream(log_entry)
 
 
 def split_attribute_name(name):
