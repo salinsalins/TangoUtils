@@ -1,7 +1,7 @@
 import logging
 
 import tango
-
+from tango.server import Device
 
 def config_logger(name: str = None, level: int = logging.DEBUG):
     if name is None:
@@ -11,7 +11,7 @@ def config_logger(name: str = None, level: int = logging.DEBUG):
             return logger
         else:
             name = __name__
-            config_logger.name = name
+    config_logger.name = name
     logger = logging.getLogger(name)
     if not logger.hasHandlers():
         logger.propagate = False
@@ -25,15 +25,27 @@ def config_logger(name: str = None, level: int = logging.DEBUG):
 
 
 # Logging to the tango log system
-# class TangoLogHandler(logging.Handler):
-#     def __init__(self):
-#         super().__init__()
-#
-#     def emit(self, record):
-#         level = logging.DEBUG
-#         log_entry = self.format(record)
-#         if level >= logging.CRITICAL:
-#             tango.server.Device.info_stream(log_entry)
+class TangoLogHandler(logging.Handler):
+    def __init__(self, name=None):
+        if name is None:
+            if hasattr(config_logger, 'name'):
+                name = config_logger.name
+            else:
+                name = __name__
+        self.logger = logging.getLogger(name)
+        super().__init__()
+
+    def emit(self, record):
+        level = self.logger.getEffectiveLevel()
+        log_entry = self.format(record)
+        if level >= logging.CRITICAL:
+            Device.fatal_stream(log_entry)
+        elif level >= logging.WARNING:
+            Device.error_stream(log_entry)
+        elif level >= logging.INFO:
+            Device.info_stream(log_entry)
+        elif level >= logging.DEBUG:
+            Device.debug_stream(log_entry)
 
 
 def split_attribute_name(name):
