@@ -95,7 +95,14 @@ class TangoServerPrototype(Device):
             message = 'Exception'
         message += tail
         self.logger.log(level, message)
-        self.error_stream(message)
+        if level >= logging.ERROR:
+            Device.fatal_stream(message)
+        elif level >= logging.WARNING:
+            Device.error_stream(message)
+        elif level >= logging.INFO:
+            Device.info_stream(message)
+        elif level >= logging.DEBUG:
+            Device.debug_stream(message)
         self.logger.debug('', exc_info=True)
 
     def get_device_property(self, prop: str, default=None):
