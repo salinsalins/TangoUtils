@@ -103,7 +103,7 @@ class TangoServerPrototype(Device):
             Device.info_stream(message)
         elif level >= logging.DEBUG:
             Device.debug_stream(message)
-        self.logger.debug('', exc_info=True)
+        self.logger.debug(message, exc_info=True)
 
     def get_device_property(self, prop: str, default=None):
         try:
