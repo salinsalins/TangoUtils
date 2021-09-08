@@ -59,7 +59,7 @@ class TangoServerPrototype(Device):
             try:
                 self.logger.setLevel(value.upper())
             except:
-                pass
+                self.logger.error('Can not set Log level to %s', value)
 
     # ******** commands ***********
     @command(dtype_in=int)
@@ -165,9 +165,10 @@ class TangoServerPrototype(Device):
 
     def set_config(self):
         # set log level
-        self.logger.setLevel(self.config.get('log_level', logging.DEBUG))
-        self.logger.debug('Log level has been set to %s',
-                          logging.getLevelName(self.logger.getEffectiveLevel()))
+        level = self.config.get('log_level', logging.DEBUG)
+        self.logger.setLevel(level)
+        self.logger.log(level, 'Log level has been set to %s',
+                        logging.getLevelName(self.logger.getEffectiveLevel()))
         return True
 
 
