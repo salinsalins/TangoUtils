@@ -30,11 +30,11 @@ class TangoServerPrototype(Device):
                         unit="", format="%s",
                         doc="Server version")
 
-    name = attribute(label="name", dtype=str,
+    name = attribute(label="type", dtype=str,
                      display_level=DispLevel.OPERATOR,
                      access=AttrWriteType.READ,
                      unit="", format="%s",
-                     doc="Server name")
+                     doc="Server type")
 
     log_level = attribute(label="log_level", dtype=str,
                           display_level=DispLevel.OPERATOR,
@@ -96,13 +96,13 @@ class TangoServerPrototype(Device):
         message += tail
         self.logger.log(level, message)
         if level >= logging.ERROR:
-            Device.fatal_stream(message)
+            self.fatal_stream(message)
         elif level >= logging.WARNING:
-            Device.error_stream(message)
+            self.error_stream(message)
         elif level >= logging.INFO:
-            Device.info_stream(message)
+            self.info_stream(message)
         elif level >= logging.DEBUG:
-            Device.debug_stream(message)
+            self.debug_stream(message)
         self.logger.debug(message, exc_info=True)
 
     def get_device_property(self, prop: str, default=None):

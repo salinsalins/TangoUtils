@@ -7,7 +7,7 @@ from tango.server import Device
 
 def config_logger(name: str = None, level: int = logging.DEBUG):
     if name is None:
-        if hasattr(config_logger, 'name'):
+        if hasattr(config_logger, 'type'):
             name = config_logger.name
             logger = logging.getLogger(name)
             return logger
@@ -32,7 +32,7 @@ def config_logger(name: str = None, level: int = logging.DEBUG):
 class TangoLogHandler(logging.Handler):
     def __init__(self, name=None):
         if name is None:
-            if hasattr(config_logger, 'name'):
+            if hasattr(config_logger, 'type'):
                 name = config_logger.name
             else:
                 name = __name__
@@ -63,7 +63,7 @@ def split_attribute_name(name):
 
 def convert_polling_status(status_string, name):
     result = {'period': 0, 'depth': 0}
-    s1 = 'Polled attribute name = '
+    s1 = 'Polled attribute type = '
     s2 = 'Polling period (mS) = '
     s3 = 'Polling ring buffer depth = '
     # s4 = 'Time needed for the last attribute reading (mS) = '
