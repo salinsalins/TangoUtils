@@ -30,7 +30,7 @@ class TangoServerPrototype(Device):
                         unit="", format="%s",
                         doc="Server version")
 
-    name = attribute(label="type", dtype=str,
+    name = attribute(label="name", dtype=str,
                      display_level=DispLevel.OPERATOR,
                      access=AttrWriteType.READ,
                      unit="", format="%s",
