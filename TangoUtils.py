@@ -4,8 +4,14 @@ import logging
 import tango
 from tango.server import Device
 
+# default log format string
+LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
+# log format string with process id and thread id
+LOG_FORMAT_STRING_2 = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
+         '%(funcName)s(%(lineno)s) %(message)s'
 
-def config_logger(name: str = None, level: int = logging.DEBUG):
+
+def config_logger(name: str = None, level: int = logging.DEBUG, format_string=None):
     if name is None:
         if hasattr(config_logger, 'name'):
             name = config_logger.name
@@ -17,37 +23,37 @@ def config_logger(name: str = None, level: int = logging.DEBUG):
     config_logger.name = name
     logger.propagate = False
     logger.setLevel(level)
-    if not hasattr(config_logger, 'f_str'):
-        f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
-        # f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
-        #         '%(funcName)s(%(lineno)s) %(message)s'
-        log_formatter = logging.Formatter(f_str, datefmt='%H:%M:%S')
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(log_formatter)
-        logger.addHandler(console_handler)
-        config_logger.f_str = f_str
-        config_logger.log_formatter = log_formatter
-        config_logger.console_handler = console_handler
+    # do not add extra handlers if logger already has one. Add any manually if needed.
+    if logger.hasHandlers():
+        return logger
+    if format_string is None:
+        format_string = LOG_FORMAT_STRING
+    log_formatter = logging.Formatter(format_string, datefmt='%H:%M:%S')
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(log_formatter)
+    logger.addHandler(console_handler)
+    config_logger.log_formatter = log_formatter
     return logger
 
 
-# Logging to the tango log system
+# Handler for logging to the tango log system
 class TangoLogHandler(logging.Handler):
-    def __init__(self, name=None):
-        super().__init__()
-        self.logger = config_logger()
-        self.setFormatter(config_logger.log_formatter)
+    def __init__(self, level=logging.DEBUG):
+        super().__init__(level)
 
     def emit(self, record):
-        level = self.logger.getEffectiveLevel()
-        log_entry = self.format(record)
+        level = self.level
         if level >= logging.CRITICAL:
+            log_entry = self.format(record)
             Device.fatal_stream(log_entry)
         elif level >= logging.WARNING:
+            log_entry = self.format(record)
             Device.error_stream(log_entry)
         elif level >= logging.INFO:
+            log_entry = self.format(record)
             Device.info_stream(log_entry)
         elif level >= logging.DEBUG:
+            log_entry = self.format(record)
             Device.debug_stream(log_entry)
 
 
