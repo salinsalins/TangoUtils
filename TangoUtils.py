@@ -7,7 +7,7 @@ from tango.server import Device
 
 def config_logger(name: str = None, level: int = logging.DEBUG):
     if name is None:
-        if hasattr(config_logger, 'type'):
+        if hasattr(config_logger, 'name'):
             name = config_logger.name
             logger = logging.getLogger(name)
             return logger
@@ -19,6 +19,8 @@ def config_logger(name: str = None, level: int = logging.DEBUG):
     logger.setLevel(level)
     if not hasattr(config_logger, 'f_str'):
         f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
+        # f_str = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
+        #         '%(funcName)s(%(lineno)s) %(message)s'
         log_formatter = logging.Formatter(f_str, datefmt='%H:%M:%S')
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(log_formatter)
@@ -32,13 +34,9 @@ def config_logger(name: str = None, level: int = logging.DEBUG):
 # Logging to the tango log system
 class TangoLogHandler(logging.Handler):
     def __init__(self, name=None):
-        if name is None:
-            if hasattr(config_logger, 'type'):
-                name = config_logger.name
-            else:
-                name = __name__
-        self.logger = logging.getLogger(name)
         super().__init__()
+        self.logger = config_logger()
+        self.setFormatter(config_logger.log_formatter)
 
     def emit(self, record):
         level = self.logger.getEffectiveLevel()
