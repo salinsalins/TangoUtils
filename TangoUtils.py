@@ -11,7 +11,7 @@ LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(threa
          '%(funcName)s(%(lineno)s) %(message)s'
 
 
-def config_logger(name: str = None, level: int = logging.DEBUG, format_string=None):
+def config_logger(name: str = None, level: int = logging.DEBUG, format_string=None, force_add_handler=False):
     if name is None:
         if hasattr(config_logger, 'name'):
             name = config_logger.name
@@ -24,7 +24,7 @@ def config_logger(name: str = None, level: int = logging.DEBUG, format_string=No
     logger.propagate = False
     logger.setLevel(level)
     # do not add extra handlers if logger already has one. Add any manually if needed.
-    if logger.hasHandlers():
+    if logger.hasHandlers() and not force_add_handler:
         return logger
     if format_string is None:
         format_string = LOG_FORMAT_STRING
@@ -38,23 +38,26 @@ def config_logger(name: str = None, level: int = logging.DEBUG, format_string=No
 
 # Handler for logging to the tango log system
 class TangoLogHandler(logging.Handler):
-    def __init__(self, level=logging.DEBUG):
+    def __init__(self, device: tango.server.Device, level=logging.DEBUG, formatter=None):
         super().__init__(level)
+        self.device = device
+        if formatter is None and hasattr(config_logger, 'log_formatter'):
+            self.setFormatter(config_logger.log_formatter)
 
     def emit(self, record):
         level = self.level
         if level >= logging.CRITICAL:
             log_entry = self.format(record)
-            Device.fatal_stream(log_entry)
+            Device.fatal_stream(self.device, log_entry)
         elif level >= logging.WARNING:
             log_entry = self.format(record)
-            Device.error_stream(log_entry)
+            Device.error_stream(self.device, log_entry)
         elif level >= logging.INFO:
             log_entry = self.format(record)
-            Device.info_stream(log_entry)
+            Device.info_stream(self.device, log_entry)
         elif level >= logging.DEBUG:
             log_entry = self.format(record)
-            Device.debug_stream(log_entry)
+            Device.debug_stream(self.device, log_entry)
 
 
 def split_attribute_name(name):
