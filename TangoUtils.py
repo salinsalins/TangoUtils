@@ -1,5 +1,6 @@
 import json
 import logging
+import sys
 
 import tango
 from tango.server import Device
@@ -34,6 +35,16 @@ def config_logger(name: str = None, level: int = logging.DEBUG, format_string=No
     logger.addHandler(console_handler)
     config_logger.log_formatter = log_formatter
     return logger
+
+
+def log_exception(logger, message=None, level=logging.ERROR):
+    ex_type, ex_value, traceback = sys.exc_info()
+    tail = ' %s %s' % (ex_type, ex_value)
+    if message is None:
+        message = 'Exception '
+    message += tail
+    logger.log(level, message)
+    logger.debug('Exception: ', exc_info=True)
 
 
 # Handler for logging to the tango log system
