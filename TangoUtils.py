@@ -4,11 +4,11 @@ import logging
 import tango
 from tango.server import Device
 
-# default log format string
-# LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
 # log format string with process id and thread id
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
          '%(funcName)s(%(lineno)s) %(message)s'
+# log format string withot process id and thread id
+LOG_FORMAT_STRING_SHORT = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
 
 
 def config_logger(name: str = None, level: int = logging.DEBUG, format_string=None, force_add_handler=False):
