@@ -38,6 +38,13 @@ def config_logger(name: str = None, level: int = logging.DEBUG, format_string=No
 
 
 def log_exception(logger, message=None, level=logging.ERROR):
+    try:
+        if not isinstance(logger, logging.Logger):
+            logger = logger.logger
+    except:
+        return
+    if not isinstance(logger, logging.Logger):
+        return
     ex_type, ex_value, traceback = sys.exc_info()
     tail = ' %s %s' % (ex_type, ex_value)
     if message is None:
