@@ -1,13 +1,14 @@
 import json
 import logging
 import sys
+import time
 
 import tango
 from tango.server import Device
 
 # log format string with process id and thread id
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
-         '%(funcName)s(%(lineno)s) %(message)s'
+                    '%(funcName)s(%(lineno)s) %(message)s'
 # log format string withot process id and thread id
 LOG_FORMAT_STRING_SHORT = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
 
@@ -35,6 +36,18 @@ def config_logger(name: str = None, level: int = logging.DEBUG, format_string=No
     logger.addHandler(console_handler)
     config_logger.log_formatter = log_formatter
     return logger
+
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        if te - ts > 0.01:
+            print('%r %2.2f sec' % (method.__name__, te - ts))
+        return result
+
+    return timed
 
 
 def log_exception(logger, message=None, level=logging.ERROR):
