@@ -3,8 +3,34 @@ import logging
 import sys
 import time
 
-import tango
-from tango.server import Device
+try:
+    import tango
+    from tango.server import Device
+
+    # Handler for logging to the tango log system
+    class TangoLogHandler(logging.Handler):
+        def __init__(self, device: tango.server.Device, level=logging.DEBUG, formatter=None):
+            super().__init__(level)
+            self.device = device
+            if formatter is None and hasattr(config_logger, 'log_formatter'):
+                self.setFormatter(config_logger.log_formatter)
+
+        def emit(self, record):
+            level = self.level
+            if level >= logging.CRITICAL:
+                log_entry = self.format(record)
+                Device.fatal_stream(self.device, log_entry)
+            elif level >= logging.WARNING:
+                log_entry = self.format(record)
+                Device.error_stream(self.device, log_entry)
+            elif level >= logging.INFO:
+                log_entry = self.format(record)
+                Device.info_stream(self.device, log_entry)
+            elif level >= logging.DEBUG:
+                log_entry = self.format(record)
+                Device.debug_stream(self.device, log_entry)
+except:
+    pass
 
 # log format string with process id and thread id
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
@@ -65,30 +91,6 @@ def log_exception(logger, message=None, level=logging.ERROR):
     message += tail
     logger.log(level, message)
     logger.debug('Exception: ', exc_info=True)
-
-
-# Handler for logging to the tango log system
-class TangoLogHandler(logging.Handler):
-    def __init__(self, device: tango.server.Device, level=logging.DEBUG, formatter=None):
-        super().__init__(level)
-        self.device = device
-        if formatter is None and hasattr(config_logger, 'log_formatter'):
-            self.setFormatter(config_logger.log_formatter)
-
-    def emit(self, record):
-        level = self.level
-        if level >= logging.CRITICAL:
-            log_entry = self.format(record)
-            Device.fatal_stream(self.device, log_entry)
-        elif level >= logging.WARNING:
-            log_entry = self.format(record)
-            Device.error_stream(self.device, log_entry)
-        elif level >= logging.INFO:
-            log_entry = self.format(record)
-            Device.info_stream(self.device, log_entry)
-        elif level >= logging.DEBUG:
-            log_entry = self.format(record)
-            Device.debug_stream(self.device, log_entry)
 
 
 def split_attribute_name(name):
