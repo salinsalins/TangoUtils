@@ -76,7 +76,7 @@ def timeit(method):
     return timed
 
 
-def log_exception(logger, message=None, level=logging.ERROR):
+def log_exception(logger, message=None, *args, level=logging.ERROR):
     try:
         if not isinstance(logger, logging.Logger):
             logger = logger.logger
@@ -89,7 +89,7 @@ def log_exception(logger, message=None, level=logging.ERROR):
     if message is None:
         message = 'Exception '
     message += tail
-    logger.log(level, message)
+    logger.log(level, message % args)
     logger.debug('Exception: ', exc_info=True)
 
 
