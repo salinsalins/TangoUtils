@@ -85,7 +85,7 @@ def log_exception(logger, message=None, *args, level=logging.ERROR):
     if not isinstance(logger, logging.Logger):
         return
     ex_type, ex_value, traceback = sys.exc_info()
-    tail = ' %s %s' % (ex_type, ex_value)
+    tail = ' %s' % ex_value
     if message is None:
         message = 'Exception '
     message += tail
