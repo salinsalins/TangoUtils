@@ -102,16 +102,16 @@ def split_attribute_name(name):
     return d_n, a_n
 
 
-def convert_polling_status(status_string, name):
+def convert_polling_status(status_string_array, name: str):
     result = {'period': 0, 'depth': 0}
     s1 = 'Polled attribute type = '
     s2 = 'Polling period (mS) = '
     s3 = 'Polling ring buffer depth = '
-    # s4 = 'Time needed for the last attribute reading (mS) = '
+    # s4 = 'Time needed for the last attribute reading (mS) = 100'
     # s4 = 'Data not updated since 54 mS'
     # s6 = 'Delta between last records (in mS) = 98, 100, 101, 98'
     n1 = s1 + name
-    for s in status_string:
+    for s in status_string_array:
         if s.startswith(n1):
             for ss in s.split('\n'):
                 try:
