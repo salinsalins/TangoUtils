@@ -160,7 +160,10 @@ class Configuration:
         try:
             # Read config from file
             with open(file_name, 'r') as configfile:
-                self.data = json.loads(configfile.read())
+                data = json.loads(configfile.read())
+                # import data
+                for d in data:
+                    self.data[d] = data[d]
                 self.file_name = file_name
             return True
         except:
