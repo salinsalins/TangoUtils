@@ -92,7 +92,7 @@ class TangoServerPrototype(Device):
         ex_type, ex_value, traceback = sys.exc_info()
         tail = ' %s %s' % (ex_type, ex_value)
         if message is None:
-            message = 'Exception'
+            message = 'Exception in ' + self.get_name()
         message += tail
         self.logger.log(level, message)
         self.logger.debug(message, exc_info=True)

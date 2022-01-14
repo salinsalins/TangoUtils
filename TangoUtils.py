@@ -59,6 +59,7 @@ def config_logger(name=None, level: int = logging.DEBUG, format_string=None, for
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(log_formatter)
     logger.addHandler(console_handler)
+    config_logger.console_handler = console_handler
     config_logger.log_formatter = log_formatter
     return logger
 
