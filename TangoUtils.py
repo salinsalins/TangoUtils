@@ -19,39 +19,38 @@ try:
             level = self.level
             if level >= logging.CRITICAL:
                 log_entry = self.format(record)
-                Device.fatal_stream(self.device, log_entry)
+                Device.fatal_stream(log_entry)
             elif level >= logging.WARNING:
                 log_entry = self.format(record)
-                Device.error_stream(self.device, log_entry)
+                Device.error_stream(log_entry)
             elif level >= logging.INFO:
                 log_entry = self.format(record)
-                Device.info_stream(self.device, log_entry)
+                Device.info_stream(log_entry)
             elif level >= logging.DEBUG:
                 log_entry = self.format(record)
-                Device.debug_stream(self.device, log_entry)
+                Device.debug_stream(log_entry)
 except:
     pass
 
 # log format string with process id and thread id
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
                     '%(funcName)s(%(lineno)s) %(message)s'
-# log format string withot process id and thread id
+# log format string without process id and thread id
 LOG_FORMAT_STRING_SHORT = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
 
 
-def config_logger(name: str = None, level: int = logging.DEBUG, format_string=None, force_add_handler=False):
+def config_logger(name=None, level: int = logging.DEBUG, format_string=None, force_add_handler=False):
     if name is None:
-        if hasattr(config_logger, 'name'):
-            name = config_logger.name
-            logger = logging.getLogger(name)
-            return logger
+        if hasattr(config_logger, 'logger'):
+            return config_logger.logger
         else:
             name = __name__
+    # create an configure logger
     logger = logging.getLogger(name)
-    config_logger.name = name
+    config_logger.logger = logger
     logger.propagate = False
     logger.setLevel(level)
-    # do not add extra handlers if logger already has one. Add any manually if needed.
+    # do not add extra console handlers if logger already has one. Add any manually if needed.
     if logger.hasHandlers() and not force_add_handler:
         return logger
     if format_string is None:
@@ -129,10 +128,8 @@ class Configuration:
         if default is None:
             default = {}
         self.data = default
-        self.file_name = file_name
-        if file_name is not None:
-            if not self.read(file_name):
-                self.data = default
+        self.file_name = None
+        self.read(file_name)
 
     def get(self, name, default=None):
         try:
@@ -156,15 +153,18 @@ class Configuration:
     def __contains__(self, key):
         return key in self.data
 
-    def read(self, file_name):
+    def read(self, file_name, append=True):
         try:
             # Read config from file
             with open(file_name, 'r') as configfile:
                 data = json.loads(configfile.read())
-                # import data
+            # import data
+            if append:
                 for d in data:
                     self.data[d] = data[d]
-                self.file_name = file_name
+            else:
+                self.data = data
+            self.file_name = file_name
             return True
         except:
             return False
