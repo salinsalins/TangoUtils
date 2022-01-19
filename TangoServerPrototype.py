@@ -145,7 +145,10 @@ class TangoServerPrototype(Device):
 
     def read_config_from_file(self, file_name=None):
         if file_name is None:
-            file_name = self.__class__.__name__ + '_' + sys.argv[1] + '.json'
+            if len(sys.argv) > 1:
+                file_name = self.__class__.__name__ + '_' + sys.argv[1].strip() + '.json'
+            else:
+                file_name = self.__class__.__name__ + '.json'
         config_file = self.get_device_property('config_file', file_name)
         self.config = Configuration(config_file)
 
