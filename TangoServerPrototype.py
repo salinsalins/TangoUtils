@@ -14,7 +14,7 @@ import tango
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command, pipe, device_property
 
-from TangoUtils import config_logger, Configuration
+from TangoUtils import config_logger, Configuration, log_exception
 
 
 class TangoServerPrototype(Device):
@@ -88,14 +88,8 @@ class TangoServerPrototype(Device):
             self.set_state(DevState.FAULT)
 
     # ******** additional helper functions ***********
-    def log_exception(self, message=None, level=logging.ERROR):
-        ex_type, ex_value, traceback = sys.exc_info()
-        tail = ' %s %s' % (ex_type, ex_value)
-        if message is None:
-            message = 'Exception in ' + self.get_name()
-        message += tail
-        self.logger.log(level, message)
-        self.logger.debug(message, exc_info=True)
+    def log_exception(self, message=None, *args, level=logging.ERROR):
+        log_exception(self, message, *args, level=level)
 
     def get_device_property(self, prop: str, default=None):
         try:
