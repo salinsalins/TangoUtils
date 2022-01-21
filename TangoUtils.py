@@ -171,7 +171,7 @@ class Configuration:
             return False
 
     def write(self, file_name=None):
-        if file_name is None:
+        if file_name is None :
             file_name = self.file_name
         if file_name is None:
             return False
