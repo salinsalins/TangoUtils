@@ -3,6 +3,7 @@ import logging
 import sys
 import time
 
+# tango dependent definitions
 try:
     import tango
     from tango.server import Device
@@ -12,8 +13,13 @@ try:
         def __init__(self, device: tango.server.Device, level=logging.DEBUG, formatter=None):
             super().__init__(level)
             self.device = device
-            if formatter is None and hasattr(config_logger, 'log_formatter'):
-                self.setFormatter(config_logger.log_formatter)
+            if formatter is None:
+                try:
+                    self.setFormatter(config_logger.log_formatter)
+                except:
+                    pass
+            else:
+                self.setFormatter(formatter)
 
         def emit(self, record):
             level = self.level
@@ -29,8 +35,22 @@ try:
             elif level >= logging.DEBUG:
                 log_entry = self.format(record)
                 Device.debug_stream(log_entry)
+
 except:
     pass
+
+
+# Logging to the text panel
+class TextEditHandler(logging.Handler):
+    def __init__(self, widget=None):
+        logging.Handler.__init__(self)
+        self.widget = widget
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        if self.widget is not None:
+            self.widget.appendPlainText(log_entry)
+
 
 # log format string with process id and thread id
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
