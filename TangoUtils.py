@@ -4,6 +4,10 @@ import sys
 import time
 
 # tango dependent definitions
+from PyQt5 import QtWidgets
+from PyQt5.QtCore import QSize, QPoint
+from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox
+
 try:
     import tango
     from tango.server import Device
@@ -198,3 +202,105 @@ class Configuration:
         with open(file_name, 'w') as configfile:
             configfile.write(json.dumps(self.data, indent=4))
         return True
+
+
+def get_widget_state(obj, config, name=None):
+    try:
+        if name is None:
+            name = obj.objectName()
+        if isinstance(obj, QLineEdit):
+            config[name] = str(obj.text())
+        elif isinstance(obj, QComboBox):
+            config[name] = {'items': [str(obj.itemText(k)) for k in range(obj.count())],
+                            'index': obj.currentIndex()}
+        elif isinstance(obj, QtWidgets.QAbstractButton):
+            config[name] = obj.isChecked()
+        elif isinstance(obj, QPlainTextEdit) or isinstance(obj, QtWidgets.QTextEdit):
+            config[name] = str(obj.toPlainText())
+        elif isinstance(obj, QtWidgets.QSpinBox) or isinstance(obj, QtWidgets.QDoubleSpinBox):
+            config[name] = obj.value()
+    except:
+        return
+
+
+def set_widget_state(obj, config, name=None):
+    try:
+        if name is None:
+            name = obj.objectName()
+        if name not in config:
+            return
+        if isinstance(obj, QLineEdit):
+            obj.setText(config[name])
+        elif isinstance(obj, QComboBox):
+            obj.setUpdatesEnabled(False)
+            bs = obj.blockSignals(True)
+            obj.clear()
+            obj.addItems(config[name]['items'])
+            obj.blockSignals(bs)
+            obj.setUpdatesEnabled(True)
+            obj.setCurrentIndex(config[name]['index'])
+            # Force index change event in the case of index=0
+            if config[name]['index'] == 0:
+                obj.currentIndexChanged.emit(0)
+        elif isinstance(obj, QtWidgets.QAbstractButton):
+            obj.setChecked(config[name])
+        elif isinstance(obj, QPlainTextEdit) or isinstance(obj, QtWidgets.QTextEdit):
+            obj.setPlainText(config[name])
+        elif isinstance(obj, QtWidgets.QSpinBox) or isinstance(obj, QtWidgets.QDoubleSpinBox):
+            obj.setValue(config[name])
+    except:
+        return
+
+
+def restore_settings(obj, file_name='config.json', widgets=()):
+    obj.config = {}
+    try:
+        # open and read config file
+        with open(file_name, 'r') as configfile:
+            s = configfile.read()
+        # interpret file contents by json
+        obj.config = json.loads(s)
+        # restore log level
+        if 'log_level' in obj.config:
+            v = obj.config['log_level']
+            obj.logger.setLevel(v)
+        # restore window size and position (can be changed by user during operation)
+        if 'main_window' in obj.config:
+            obj.resize(QSize(obj.config['main_window']['size'][0], obj.config['main_window']['size'][1]))
+            obj.move(QPoint(obj.config['main_window']['position'][0], obj.config['main_window']['position'][1]))
+        # --- removed - should be configured in the UI file
+        # if 'icon_file' in obj.config:
+        #     obj.setWindowIcon(QtGui.QIcon(obj.config['icon_file']))  # icon
+        # if 'application_name' in obj.config:
+        #     obj.setWindowTitle(obj.config['application_name'])       # title
+        # restore widgets state
+        for w in widgets:
+            set_widget_state(w, obj.config)
+        # OK message
+        obj.logger.info('Configuration restored from %s', file_name)
+    except:
+        log_exception(obj.logger)
+    return obj.config
+
+
+def save_settings(obj, file_name='config.json', widgets=()):
+    try:
+        # save current window size and position
+        p = obj.pos()
+        s = obj.size()
+        obj.config['main_window'] = {'size': (s.width(), s.height()), 'position': (p.x(), p.y())}
+        # get state of widgets
+        for w in widgets:
+            get_widget_state(w, obj.config)
+        # write to file
+        with open(file_name, 'w') as configfile:
+            configfile.write(json.dumps(obj.config, indent=4))
+        # OK message
+        obj.logger.info('Configuration saved to %s', file_name)
+        return True
+    except:
+        log_exception(obj.logger)
+        return False
+
+
+
