@@ -180,6 +180,7 @@ class Configuration:
 
     def read(self, file_name, append=True):
         try:
+            self.file_name = file_name
             # Read config from file
             with open(file_name, 'r') as configfile:
                 data = json.loads(configfile.read())
@@ -189,7 +190,6 @@ class Configuration:
                     self.data[d] = data[d]
             else:
                 self.data = data
-            self.file_name = file_name
             return True
         except:
             return False
