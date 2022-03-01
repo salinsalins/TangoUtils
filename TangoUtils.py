@@ -163,6 +163,7 @@ class Configuration:
                 result = type(default)(result)
         except:
             result = default
+        self.data[name] = result
         return result
 
     def __len__(self):
