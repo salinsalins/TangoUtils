@@ -65,16 +65,16 @@ LOG_FORMAT_STRING_SHORT = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %
 
 def config_logger(name=None, level: int = logging.DEBUG, format_string=None, force_add_handler=False):
     if name is None:
-        if hasattr(config_logger, 'logger'):
+        if hasattr(config_logger, 'LOGGER'):
             return config_logger.logger
         else:
             name = __name__
-    # create an configure logger
+    # create an configure LOGGER
     logger = logging.getLogger(name)
     config_logger.logger = logger
     logger.propagate = False
     logger.setLevel(level)
-    # do not add extra console handlers if logger already has one. Add any manually if needed.
+    # do not add extra console handlers if LOGGER already has one. Add any manually if needed.
     if logger.hasHandlers() and not force_add_handler:
         return logger
     if format_string is None:
@@ -101,13 +101,11 @@ def timeit(method):
 
 
 def log_exception(logger, message=None, *args, level=logging.ERROR):
-    try:
-        if not isinstance(logger, logging.Logger):
-            logger = logger.logger
-    except:
-        return
     if not isinstance(logger, logging.Logger):
-        return
+        if hasattr(logger, 'logger'):
+            logger = logger.logger
+        elif hasattr(logger, 'LOGGER'):
+            logger = logger.LOGGER
     ex_type, ex_value, traceback = sys.exc_info()
     tail = ' %s' % ex_value
     if message is None:
@@ -264,11 +262,11 @@ def restore_settings(obj, file_name='config.json', widgets=()):
                 # interpret file contents by json
                 obj.config = json.loads(s)
             except:
-                log_exception(obj.logger)
+                log_exception(obj.LOGGER)
             # restore log level
             if 'log_level' in obj.config:
                 v = obj.config['log_level']
-                obj.logger.setLevel(v)
+                obj.LOGGER.setLevel(v)
             # restore window size and position (can be changed by user during operation)
             if 'main_window' in obj.config:
                 obj.resize(QSize(obj.config['main_window']['size'][0], obj.config['main_window']['size'][1]))
@@ -282,9 +280,9 @@ def restore_settings(obj, file_name='config.json', widgets=()):
             for w in widgets:
                 set_widget_state(w, obj.config)
             # OK message
-            obj.logger.info('Configuration restored from %s', file_name)
+            obj.LOGGER.info('Configuration restored from %s', file_name)
     except:
-        log_exception(obj.logger)
+        log_exception(obj.LOGGER)
     return obj.config
 
 
@@ -301,10 +299,10 @@ def save_settings(obj, file_name='config.json', widgets=()):
         with open(file_name, 'w') as configfile:
             configfile.write(json.dumps(obj.config, indent=4))
         # OK message
-        obj.logger.info('Configuration saved to %s', file_name)
+        obj.LOGGER.info('Configuration saved to %s', file_name)
         return True
     except:
-        log_exception(obj.logger)
+        log_exception(obj.LOGGER)
         return False
 
 

@@ -71,7 +71,7 @@ class TangoServerPrototype(Device):
 
     # ******** init_device ***********
     def init_device(self):
-        # default logger
+        # default LOGGER
         self.logger = config_logger()
         self.set_state(DevState.INIT)
         # default properties
