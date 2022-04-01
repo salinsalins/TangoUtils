@@ -143,12 +143,14 @@ class TangoServerPrototype(Device):
             else:
                 self.config[p] = props[p][0]
 
+    def write_config_to_properties(self):
+        # for p in self.config.data:
+        #     self.set_device_property(p, self.config.data[p])
+        self.device_proxy.put_property(self.config.data)
+
     def read_config_from_file(self, file_name=None):
         if file_name is None:
-            if len(sys.argv) > 1:
-                file_name = self.__class__.__name__ + '_' + sys.argv[1].strip() + '.json'
-            else:
-                file_name = self.__class__.__name__ + '.json'
+            file_name = self.__class__.__name__ + '.json'
         config_file = self.get_device_property('config_file', file_name)
         self.config = Configuration(config_file)
 
