@@ -82,10 +82,7 @@ class TangoServerPrototype(Device):
         # config from properties
         self.read_config_from_properties()
         # set config
-        if self.set_config():
-            self.set_state(DevState.RUNNING)
-        else:
-            self.set_state(DevState.FAULT)
+        self.set_config()
 
     # ******** additional helper functions ***********
     def log_exception(self, message=None, *args, level=logging.ERROR):
