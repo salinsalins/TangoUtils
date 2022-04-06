@@ -116,8 +116,11 @@ def log_exception(logger, message=None, *args, level=logging.ERROR):
     if message is None:
         message = 'Exception '
     message += tail
-    logger.log(level, message % args)
-    logger.debug('Exception: ', exc_info=True)
+    try:
+        logger.log(level, message % args)
+        logger.debug('Exception: ', exc_info=True)
+    except:
+        print(message % args)
 
 
 def split_attribute_name(name):
