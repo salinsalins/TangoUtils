@@ -1,3 +1,4 @@
+import inspect
 import json
 import logging
 import sys
@@ -101,6 +102,10 @@ def timeit(method):
 
 
 def log_exception(logger, message=None, *args, level=logging.ERROR):
+    if isinstance(logger, str):
+        #caller = sys._getframe(1).f_code.co_name
+        logger = inspect.stack()[1].frame.f_locals['self'].logger
+        #raise ValueError('Incorrect argument for logger')
     if not isinstance(logger, logging.Logger):
         if hasattr(logger, 'logger'):
             logger = logger.logger
