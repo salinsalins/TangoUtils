@@ -138,16 +138,16 @@ try:
             level = self.level
             if level >= logging.CRITICAL:
                 log_entry = self.format(record)
-                Device.fatal_stream(log_entry)
+                self.device.fatal_stream(log_entry)
             elif level >= logging.WARNING:
                 log_entry = self.format(record)
-                Device.error_stream(log_entry)
+                self.device.error_stream(log_entry)
             elif level >= logging.INFO:
                 log_entry = self.format(record)
-                Device.info_stream(log_entry)
+                self.device.info_stream(log_entry)
             elif level >= logging.DEBUG:
                 log_entry = self.format(record)
-                Device.debug_stream(log_entry)
+                self.device.debug_stream(log_entry)
 except:
     pass
 

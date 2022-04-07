@@ -14,7 +14,7 @@ import tango
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command, pipe, device_property
 
-from TangoUtils import config_logger, Configuration, log_exception
+from TangoUtils import config_logger, Configuration, log_exception, TangoLogHandler
 
 
 class TangoServerPrototype(Device):
@@ -122,9 +122,9 @@ class TangoServerPrototype(Device):
         apr[attr_name][prop_name] = str(value)
         db.put_device_attribute_property(self.get_name(), apr)
 
-    def properties(self, filter: str = '*'):
+    def properties(self, fltr: str = '*'):
         # returns dictionary with device properties
-        names = self.device_proxy.get_property_list(filter)
+        names = self.device_proxy.get_property_list(fltr)
         if len(names) > 0:
             return self.device_proxy.get_property(names)
         else:
@@ -158,6 +158,11 @@ class TangoServerPrototype(Device):
         self.logger.log(level, 'Log level has been set to %s',
                         logging.getLevelName(self.logger.getEffectiveLevel()))
         return True
+
+    def configure_tango_logging(self):
+        # add logging to TLS
+        self.logger.addHandler(TangoLogHandler(self))
+        # enable tango logging
 
 
 def looping():
