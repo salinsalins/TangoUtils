@@ -4,7 +4,7 @@ import logging
 import sys
 import time
 
-# tango dependent definitions
+# PyQt dependent definitions
 try:
     from PyQt5 import QtWidgets
     from PyQt5.QtCore import QSize, QPoint
@@ -116,6 +116,7 @@ try:
 except:
     pass
 
+# tango dependent definitions
 try:
     import tango
     from tango.server import Device
