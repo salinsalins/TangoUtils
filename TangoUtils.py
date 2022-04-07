@@ -5,9 +5,12 @@ import sys
 import time
 
 # tango dependent definitions
-from PyQt5 import QtWidgets
-from PyQt5.QtCore import QSize, QPoint
-from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox
+try:
+    from PyQt5 import QtWidgets
+    from PyQt5.QtCore import QSize, QPoint
+    from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox
+except:
+    pass
 
 try:
     import tango
