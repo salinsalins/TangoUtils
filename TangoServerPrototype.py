@@ -103,7 +103,8 @@ class TangoServerPrototype(Device):
         except:
             return default
 
-    def set_device_property(self, prop: str, value: str):
+    def set_device_property(self, prop, value):
+        prop = str(prop)
         try:
             self.device_proxy.put_property({prop: value})
         except:
@@ -163,6 +164,15 @@ class TangoServerPrototype(Device):
         # add logging to TLS
         self.logger.addHandler(TangoLogHandler(self))
         # enable tango logging
+        print('logging_level', self.get_device_property('logging_level'))
+        print('logging_target', self.get_device_property('logging_target'))
+        print('logging_rft', self.get_device_property('logging_rft'))
+        print('logging_path', self.get_device_property('logging_path'))
+        #self.set_device_property('logging_level', self.logger.getEffectiveLevel())
+        self.set_device_property('logging_level', 10)
+        self.set_device_property('logging_target', 'console')
+        self.fatal_stream('Test message')
+
 
 
 def looping():
