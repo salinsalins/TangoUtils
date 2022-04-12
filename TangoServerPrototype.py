@@ -83,6 +83,7 @@ class TangoServerPrototype(Device):
         self.read_config_from_properties()
         # set config
         self.set_config()
+        self.tango_logging = False
 
     # ******** additional helper functions ***********
     def log_exception(self, message=None, *args, level=logging.ERROR):
@@ -164,21 +165,20 @@ class TangoServerPrototype(Device):
         # add logging to TLS
         tlh = TangoLogHandler(self)
         self.logger.addHandler(tlh)
-        # enable tango logging
-        print('logging_level', self.get_device_property('logging_level'))
-        print('logging_target', self.get_device_property('logging_target'))
-        print('logging_rft', self.get_device_property('logging_rft'))
-        print('logging_path', self.get_device_property('logging_path'))
-        #self.set_device_property('logging_level', self.logger.getEffectiveLevel())
-        self.set_device_property('logging_level', 5)
-        self.set_device_property('logging_target', 'console::')
-        self.init_logger()
-        self.start_logging()
-        # ds_name = 'dserver/' + self.TangoClassName + '/' + sys.argv[1]
-        # ds_device_proxy = tango.DeviceProxy(ds_name)
-        # ds_device_proxy.command_inout('SetLoggingLevel',[[5],[self.get_name()]])
-        self.info_stream('Test debug 1')
-        print('Test debug 3')
+        # # enable tango logging
+        # print('logging_level', self.get_device_property('logging_level'))
+        # print('logging_target', self.get_device_property('logging_target'))
+        # print('logging_rft', self.get_device_property('logging_rft'))
+        # print('logging_path', self.get_device_property('logging_path'))
+        # #self.set_device_property('logging_level', self.logger.getEffectiveLevel())
+        # self.set_device_property('logging_level', "5")
+        # self.set_device_property('logging_target', 'console')
+        # self.init_logger()
+        # self.start_logging()
+        # # ds_name = 'dserver/' + self.TangoClassName + '/' + sys.argv[1]
+        # # ds_device_proxy = tango.DeviceProxy(ds_name)
+        # # ds_device_proxy.command_inout('SetLoggingLevel',[[5],[self.get_name()]])
+        # self.tango_logging = True
 
 
 def looping():
