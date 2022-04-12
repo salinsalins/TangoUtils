@@ -208,6 +208,12 @@ def timeit(method):
 
 
 def log_exception(logger, message=None, *args, level=logging.ERROR):
+    ex_type, ex_value, traceback = sys.exc_info()
+    tail = ' %s' % ex_value
+    if message is None:
+        message = 'Exception '
+    message += tail
+    message = message % args
     if isinstance(logger, str):
         #caller = sys._getframe(1).f_code.co_name
         logger = inspect.stack()[1].frame.f_locals['self'].logger
@@ -217,17 +223,18 @@ def log_exception(logger, message=None, *args, level=logging.ERROR):
             logger = logger.logger
         elif hasattr(logger, 'LOGGER'):
             logger = logger.LOGGER
-    ex_type, ex_value, traceback = sys.exc_info()
-    tail = ' %s' % ex_value
-    if message is None:
-        message = 'Exception '
-    message += tail
+    if not isinstance(logger, logging.Logger):
+        return message
     try:
-        logger.log(level, message % args)
+        logger.log(level, message)
         logger.debug('Exception: ', exc_info=True)
+        return message
     except:
-        print(message % args)
-
+        ex_type, ex_value, traceback = sys.exc_info()
+        tail = ' %s' % ex_value
+        print('Unexpected exception in log_exception ', tail)
+        print('Previous exception:', message)
+        return message
 
 def split_attribute_name(name):
     # [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
