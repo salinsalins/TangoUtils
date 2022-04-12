@@ -71,6 +71,7 @@ class TangoServerPrototype(Device):
 
     # ******** init_device ***********
     def init_device(self):
+        self.tango_logging = False
         # default LOGGER
         self.logger = config_logger()
         self.set_state(DevState.INIT)
@@ -83,7 +84,6 @@ class TangoServerPrototype(Device):
         self.read_config_from_properties()
         # set config
         self.set_config()
-        self.tango_logging = False
 
     # ******** additional helper functions ***********
     def log_exception(self, message=None, *args, level=logging.ERROR):
