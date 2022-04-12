@@ -121,6 +121,7 @@ try:
     import tango
     from tango.server import Device
 
+
     # Handler for logging to the tango log system
     class TangoLogHandler(logging.Handler):
         def __init__(self, device: tango.server.Device, level=logging.DEBUG, formatter=None):
@@ -163,6 +164,9 @@ class TextEditHandler(logging.Handler):
         if self.widget is not None:
             self.widget.appendPlainText(log_entry)
 
+
+TANGO_LOG_LEVEL = {'DEBUG': 5, 'INFO': 4, 'WARNING': 3, 'ERROR': 2, 'FATAL': 1, 'OFF': 0,
+                   5: 'DEBUG', 4: 'INFO', 3: 'WARNING', 2: 'ERROR', 1: 'FATAL', 0: 'OFF'}
 
 # log format string with process id and thread id
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
@@ -215,9 +219,9 @@ def log_exception(logger, message=None, *args, level=logging.ERROR):
     message += tail
     message = message % args
     if isinstance(logger, str):
-        #caller = sys._getframe(1).f_code.co_name
+        # caller = sys._getframe(1).f_code.co_name
         logger = inspect.stack()[1].frame.f_locals['self'].logger
-        #raise ValueError('Incorrect argument for logger')
+        # raise ValueError('Incorrect argument for logger')
     if not isinstance(logger, logging.Logger):
         if hasattr(logger, 'logger'):
             logger = logger.logger
@@ -235,6 +239,7 @@ def log_exception(logger, message=None, *args, level=logging.ERROR):
         print('Unexpected exception in log_exception ', tail)
         print('Previous exception:', message)
         return message
+
 
 def split_attribute_name(name):
     # [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
@@ -322,5 +327,3 @@ class Configuration:
         with open(file_name, 'w') as configfile:
             configfile.write(json.dumps(self.data, indent=4))
         return True
-
-

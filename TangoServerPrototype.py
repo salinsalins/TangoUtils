@@ -166,6 +166,12 @@ class TangoServerPrototype(Device):
         tlh = TangoLogHandler(self)
         self.logger.addHandler(tlh)
         # # enable tango logging
+        #
+        # util = tango.Util.instance()
+        # dserver = util.get_dserver_device()
+        # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
+        # dserver.command_inout('SetLoggingLevel',[[5],[self.get_name()]])
+        #
         # print('logging_level', self.get_device_property('logging_level'))
         # print('logging_target', self.get_device_property('logging_target'))
         # print('logging_rft', self.get_device_property('logging_rft'))
@@ -175,9 +181,6 @@ class TangoServerPrototype(Device):
         # self.set_device_property('logging_target', 'console')
         # self.init_logger()
         # self.start_logging()
-        # # ds_name = 'dserver/' + self.TangoClassName + '/' + sys.argv[1]
-        # # ds_device_proxy = tango.DeviceProxy(ds_name)
-        # # ds_device_proxy.command_inout('SetLoggingLevel',[[5],[self.get_name()]])
         # self.tango_logging = True
 
 
