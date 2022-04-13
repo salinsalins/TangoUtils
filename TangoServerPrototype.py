@@ -165,22 +165,21 @@ class TangoServerPrototype(Device):
         # add logging to TLS
         tlh = TangoLogHandler(self)
         self.logger.addHandler(tlh)
-        # # enable tango logging
-        #
+        # configure tango logging
+
+        # set logging level via dserver !!! Working only after server start, not during init !!!
         # util = tango.Util.instance()
         # dserver = util.get_dserver_device()
         # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
-        # dserver.command_inout('SetLoggingLevel',[[5],[self.get_name()]])
-        #
-        # print('logging_level', self.get_device_property('logging_level'))
-        # print('logging_target', self.get_device_property('logging_target'))
-        # print('logging_rft', self.get_device_property('logging_rft'))
-        # print('logging_path', self.get_device_property('logging_path'))
-        # #self.set_device_property('logging_level', self.logger.getEffectiveLevel())
+        # level = TANGO_LOG_LEVEL[self.logger.getEffectiveLevel()]
+        # dserver.command_inout('SetLoggingLevel',[[level],[self.get_name()]])
+
+        # set device logging properties - has no effect
+        # self.set_device_property('logging_level', self.logger.getEffectiveLevel())
         # self.set_device_property('logging_level', "5")
         # self.set_device_property('logging_target', 'console')
-        # self.init_logger()
-        # self.start_logging()
+        # self.init_logger() # has no effect
+        # self.start_logging() # has no effect
         # self.tango_logging = True
 
 
