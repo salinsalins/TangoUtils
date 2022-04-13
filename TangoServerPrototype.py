@@ -15,7 +15,7 @@ import tango
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command, pipe, device_property
 
-from TangoUtils import config_logger, Configuration, log_exception, TangoLogHandler
+from TangoUtils import config_logger, Configuration, log_exception, TangoLogHandler, TANGO_LOG_LEVELS
 
 
 class TangoServerPrototype(Device):
@@ -55,12 +55,19 @@ class TangoServerPrototype(Device):
 
     def write_log_level(self, value):
         try:
-            self.logger.setLevel(int(value))
-        except:
             try:
-                self.logger.setLevel(value.upper())
+                v = int(value)
             except:
-                self.logger.error('Can not set Log level to %s', value)
+                v = value.upper()
+            self.logger.setLevel(v)
+            # configure tango logging
+            util = tango.Util.instance()
+            dserver = util.get_dserver_device()
+            # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
+            level = TANGO_LOG_LEVELS[self.read_log_level()]
+            tango.DeviceProxy(dserver.get_name()).command_inout('SetLoggingLevel',[[level],[self.get_name()]])
+        except:
+            log_exception(self, 'Can not set Log level to %s', value)
 
     # ******** commands ***********
     @command(dtype_in=int)
@@ -68,7 +75,6 @@ class TangoServerPrototype(Device):
         self.write_log_level(level)
         msg = '%s Log level has been set to %s' % (self.get_name(), self.read_log_level())
         self.logger.info(msg)
-        self.info_stream(msg)
 
     # ******** init_device ***********
     def init_device(self):
@@ -172,7 +178,7 @@ class TangoServerPrototype(Device):
         # util = tango.Util.instance()
         # dserver = util.get_dserver_device()
         # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
-        # level = TANGO_LOG_LEVEL[self.logger.getEffectiveLevel()]
+        # level = TANGO_LOG_LEVELS[self.logger.getEffectiveLevel()]
         # dserver.command_inout('SetLoggingLevel',[[level],[self.get_name()]])
 
         # set device logging properties - has no effect

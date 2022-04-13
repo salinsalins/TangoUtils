@@ -165,8 +165,8 @@ class TextEditHandler(logging.Handler):
             self.widget.appendPlainText(log_entry)
 
 
-TANGO_LOG_LEVEL = {'DEBUG': 5, 'INFO': 4, 'WARNING': 3, 'ERROR': 2, 'FATAL': 1, 'OFF': 0,
-                   5: 'DEBUG', 4: 'INFO', 3: 'WARNING', 2: 'ERROR', 1: 'FATAL', 0: 'OFF'}
+TANGO_LOG_LEVELS = {'DEBUG': 5, 'INFO': 4, 'WARNING': 3, 'ERROR': 2, 'FATAL': 1, 'OFF': 0,
+                    5: 'DEBUG', 4: 'INFO', 3: 'WARNING', 2: 'ERROR', 1: 'FATAL', 0: 'OFF'}
 
 # log format string with process id and thread id
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
@@ -213,9 +213,9 @@ def timeit(method):
 
 def log_exception(logger, message=None, *args, level=logging.ERROR):
     ex_type, ex_value, traceback = sys.exc_info()
-    tail = ' %s' % ex_value
+    tail = ' %s: %s' % (ex_type.__name__, ex_value)
     if message is None:
-        message = 'Exception '
+        message = 'Exception'
     message += tail
     message = message % args
     if isinstance(logger, str):
