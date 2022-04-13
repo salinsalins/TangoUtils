@@ -184,10 +184,12 @@ class TangoServerPrototype(Device):
 
 
 def looping():
+    print('Empty loop. Overwrite or disable.')
     pass
 
 
 def post_init_callback():
+    print('Empty post_init_callback. Overwrite or disable.')
     pass
 
 
