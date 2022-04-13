@@ -8,6 +8,7 @@ A. L. Sanin, started 05.07.2021
 import logging
 import sys
 import json
+import time
 
 import numpy
 import tango
@@ -185,6 +186,7 @@ class TangoServerPrototype(Device):
 
 def looping():
     print('Empty loop. Overwrite or disable.')
+    time.sleep(1.0)
     pass
 
 
