@@ -230,12 +230,12 @@ def log_exception(logger, message=None, *args, level=logging.ERROR):
     if not isinstance(logger, logging.Logger):
         return message
     try:
-        logger.log(level, message)
+        logger.log(level, message, stacklevel=2)
         logger.debug('Exception: ', exc_info=True)
         return message
     except:
         ex_type, ex_value, traceback = sys.exc_info()
-        tail = ' %s' % ex_value
+        tail = ' %s: %s' % (ex_type.__name__, ex_value)
         print('Unexpected exception in log_exception ', tail)
         print('Previous exception:', message)
         return message
