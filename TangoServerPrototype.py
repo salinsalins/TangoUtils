@@ -110,6 +110,30 @@ class TangoServerPrototype(Device):
         message = self.get_name() + ' ' + message
         log_exception(self, message, *args, level=level)
 
+    def debug(self, message=None, *args, **kwargs):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
+        self.logger.debug(message, *args, **kwargs)
+
+    def info(self, message=None, *args, **kwargs):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
+        self.logger.info(message, *args, **kwargs)
+
+    def warning(self, message=None, *args, **kwargs):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
+        self.logger.warning(message, *args, **kwargs)
+
+    def error(self, message=None, *args, **kwargs):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
+        self.logger.error(message, *args, **kwargs)
+
     def get_device_property(self, prop: str, default=None):
         try:
             pr = self.device_proxy.get_property(prop)[prop]
