@@ -105,6 +105,9 @@ class TangoServerPrototype(Device):
 
     # ******** additional helper functions ***********
     def log_exception(self, message=None, *args, level=logging.ERROR):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
         log_exception(self, message, *args, level=level)
 
     def get_device_property(self, prop: str, default=None):
