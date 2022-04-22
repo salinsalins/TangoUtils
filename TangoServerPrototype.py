@@ -61,7 +61,7 @@ class TangoServerPrototype(Device):
                 v = value.upper()
             self.logger.setLevel(v)
             # configure tango logging
-            util = tango.Util.instance()
+            util = tango.Util.instance(self)
             dserver = util.get_dserver_device()
             # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
             level = TANGO_LOG_LEVELS[self.read_log_level()]
@@ -70,7 +70,7 @@ class TangoServerPrototype(Device):
             log_exception(self, 'Can not set Log level to %s', value)
 
     def set_tango_log_level(self, level=None):
-        self.util = tango.Util.instance()
+        self.util = tango.Util.instance(self)
         self.dserver = self.util.get_dserver_device()
         self.dserver_name = self.dserver.get_name()
         self.dserver_proxy = tango.DeviceProxy(self.dserver_name)
@@ -105,7 +105,34 @@ class TangoServerPrototype(Device):
 
     # ******** additional helper functions ***********
     def log_exception(self, message=None, *args, level=logging.ERROR):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
         log_exception(self, message, *args, level=level)
+
+    def debug(self, message=None, *args, **kwargs):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
+        self.logger.debug(message, *args, **kwargs)
+
+    def info(self, message=None, *args, **kwargs):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
+        self.logger.info(message, *args, **kwargs)
+
+    def warning(self, message=None, *args, **kwargs):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
+        self.logger.warning(message, *args, **kwargs)
+
+    def error(self, message=None, *args, **kwargs):
+        if message is None:
+            message = ''
+        message = self.get_name() + ' ' + message
+        self.logger.error(message, *args, **kwargs)
 
     def get_device_property(self, prop: str, default=None):
         try:
@@ -177,6 +204,7 @@ class TangoServerPrototype(Device):
         self.logger.setLevel(level)
         self.logger.log(level, 'Log level has been set to %s',
                         logging.getLevelName(self.logger.getEffectiveLevel()))
+        self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
         return True
 
     def configure_tango_logging(self):
