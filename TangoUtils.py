@@ -149,6 +149,8 @@ try:
             elif level >= logging.DEBUG:
                 log_entry = self.format(record)
                 self.device.debug_stream(log_entry)
+
+
 except:
     pass
 
@@ -172,7 +174,8 @@ TANGO_LOG_LEVELS = {'DEBUG': 5, 'INFO': 4, 'WARNING': 3, 'ERROR': 2, 'FATAL': 1,
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
                     '%(funcName)s(%(lineno)s) %(message)s'
 # log format string without process id and thread id
-LOG_FORMAT_STRING_SHORT = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
+LOG_FORMAT_STRING_SHORT = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s ' \
+                          '%(funcName)s(%(lineno)s) %(message)s'
 
 
 def config_logger(name=None, level: int = logging.DEBUG, format_string=None, force_add_handler=False):
@@ -270,6 +273,20 @@ def convert_polling_status(status_string_array, name: str):
                 except:
                     pass
     return result
+
+
+def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
+    config = get_attribute_config(dp, attrib_name)
+    try:
+        coeff = float(config.display_unit)
+    except:
+        coeff = 1.0
+    return coeff
+
+
+def get_attribute_config(dp: tango.DeviceProxy, attrib_name: str):
+    return dp.get_attribute_config_ex(attrib_name)[0]
+
 
 
 class Configuration:
