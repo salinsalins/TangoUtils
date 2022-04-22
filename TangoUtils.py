@@ -121,7 +121,6 @@ try:
     import tango
     from tango.server import Device
 
-
     # Handler for logging to the tango log system
     class TangoLogHandler(logging.Handler):
         def __init__(self, device: tango.server.Device, level=logging.DEBUG, formatter=None):
@@ -286,7 +285,6 @@ def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
 
 def get_attribute_config(dp: tango.DeviceProxy, attrib_name: str):
     return dp.get_attribute_config_ex(attrib_name)[0]
-
 
 
 class Configuration:
