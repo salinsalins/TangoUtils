@@ -38,7 +38,7 @@ class TangoServerPrototype(Device):
                      doc="Server type")
 
     log_level = attribute(label="log_level", dtype=str,
-                          display_level=DispLevel.OPERATOR,
+                          display_level=DispLevel.EXPERT,
                           access=AttrWriteType.READ_WRITE,
                           unit="", format="%7s",
                           doc="Server log level")
