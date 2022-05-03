@@ -228,6 +228,15 @@ class TangoServerPrototype(Device):
         # self.start_logging() # has no effect
         # self.tango_logging = True
 
+    def set_running(self, msg='R/W OK'):
+        self.set_state(DevState.RUNNING)
+        self.set_status(msg)
+
+    def set_fault(self, msg='Error during R/W'):
+        self.set_state(DevState.FAULT)
+        self.set_status(msg)
+
+
 
 def looping():
     print('Empty loop. Overwrite or disable.')
