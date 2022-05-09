@@ -1,55 +1,52 @@
 import json
 
 
-class Configuration:
-    def __init__(self, file_name=None, default=None):
+class Configuration(dict):
+    def __init__(self, file_name: str = None, default: dict = None):
         if default is None:
             default = {}
-        self.data = default
-        self.file_name = None
-        self.read(file_name)
+        super().__init__(default)
+        self.file_name = file_name
+        self.read()
 
-    def get(self, name, default=None):
+    def get(self, key, default=None):
         try:
-            result = self.data.get(name, default)
-            if default is not None:
+            result = super().get(key, default)
+            if default is not None and result is not None:
                 result = type(default)(result)
         except:
             result = default
-        self.data[name] = result
+        self[key] = result
         return result
 
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, key):
-        return self.data[key]
-
-    def __setitem__(self, key, value):
-        self.data[key] = value
-        return
-
-    def __contains__(self, key):
-        return key in self.data
+    # def __getitem__(self, key):
+    #     return self.data[key]
+    #
+    # def __setitem__(self, key, value):
+    #     self.data[key] = value
+    #     return
+    #
+    # def __contains__(self, key):
+    #     return key in self.data
 
     def find(self, value):
-        for key in self.data:
-            if self.data[key] == value:
+        for key in self:
+            if self[key] == value:
                 return key
         return None
 
-    def read(self, file_name, append=True):
-        try:
+    def read(self, file_name=None, append=True):
+        if file_name is not None:
             self.file_name = file_name
+        try:
             # Read config from file
-            with open(file_name, 'r') as configfile:
+            with open(self.file_name, 'r') as configfile:
                 data = json.loads(configfile.read())
             # import data
-            if append:
-                for d in data:
-                    self.data[d] = data[d]
-            else:
-                self.data = data
+            if not append:
+                self.clear()
+            for d in data:
+                self[d] = data[d]
             return True
         except:
             return False
@@ -57,8 +54,10 @@ class Configuration:
     def write(self, file_name=None):
         if file_name is None:
             file_name = self.file_name
-        if file_name is None:
+        else:
+            self.file_name = file_name
+        if not file_name:
             return False
         with open(file_name, 'w') as configfile:
-            configfile.write(json.dumps(self.data, indent=4))
+            configfile.write(json.dumps(self, indent=4))
         return True
