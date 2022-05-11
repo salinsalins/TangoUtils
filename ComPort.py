@@ -76,6 +76,17 @@ class ComPort:
             else:
                 return True
 
+    def reset_output_buffer(self):
+        with ComPort._devices[self.port].lock:
+            if ComPort._devices[self.port].ready:
+                try:
+                        ComPort._devices[self.port]._device.reset_output_buffer()
+                        return True
+                except:
+                    return False
+            else:
+                return True
+
     def close(self):
         with ComPort._devices[self.port].lock:
             if ComPort._devices[self.port].ready:
@@ -86,3 +97,16 @@ class ComPort:
     @property
     def ready(self):
         return ComPort._devices[self.port]._device.isOpen()
+
+    @property
+    def in_waiting(self):
+        with ComPort._devices[self.port].lock:
+            if ComPort._devices[self.port].ready:
+                try:
+                        return ComPort._devices[self.port]._device.in_waiting
+                except:
+                    return False
+            else:
+                return True
+
+
