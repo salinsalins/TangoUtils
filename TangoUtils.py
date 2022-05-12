@@ -150,6 +150,18 @@ try:
                 self.device.debug_stream(log_entry)
 
 
+    def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
+        config = get_attribute_config(dp, attrib_name)
+        try:
+            coeff = float(config.display_unit)
+        except:
+            coeff = 1.0
+        return coeff
+
+
+    def get_attribute_config(dp: tango.DeviceProxy, attrib_name: str):
+        return dp.get_attribute_config_ex(attrib_name)[0]
+
 except:
     pass
 
@@ -272,19 +284,6 @@ def convert_polling_status(status_string_array, name: str):
                 except:
                     pass
     return result
-
-
-def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
-    config = get_attribute_config(dp, attrib_name)
-    try:
-        coeff = float(config.display_unit)
-    except:
-        coeff = 1.0
-    return coeff
-
-
-def get_attribute_config(dp: tango.DeviceProxy, attrib_name: str):
-    return dp.get_attribute_config_ex(attrib_name)[0]
 
 
 class Configuration:
