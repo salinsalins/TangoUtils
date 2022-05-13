@@ -237,6 +237,11 @@ class TangoServerPrototype(Device):
         self.set_state(DevState.FAULT)
         self.set_status(msg)
 
+    # def __getattr__(self, name):
+    #     if name in self.config:
+    #         return self.config(name)
+    #     super().__getttr__(name)
+
 
 
 def looping():
