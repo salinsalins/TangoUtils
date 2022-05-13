@@ -17,11 +17,16 @@ from tango.server import Device, attribute, command, pipe, device_property
 
 from TangoUtils import config_logger, Configuration, log_exception, TangoLogHandler, TANGO_LOG_LEVELS
 
+ORGANIZATION_NAME = 'BINP'
+APPLICATION_NAME = 'Python Prototype Tango Server'
+APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
+APPLICATION_VERSION = '0.0'
+
 
 class TangoServerPrototype(Device):
     # ******** class variables ***********
-    server_version = '0.0'
-    server_name = 'Python Prototype Tango Server'
+    server_version = APPLICATION_VERSION
+    server_name = APPLICATION_NAME_SHORT
     device_list = []
 
     # ******** attributes ***********
@@ -103,12 +108,19 @@ class TangoServerPrototype(Device):
         # set config
         self.set_config()
 
+    def set_config(self):
+        # set log level
+        level = self.config.get('log_level', logging.DEBUG)
+        self.logger.setLevel(level)
+        self.logger.log(level, 'Log level has been set to %s',
+                        logging.getLevelName(self.logger.getEffectiveLevel()))
+        self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
+        return True
+
     # ******** additional helper functions ***********
-    def log_exception(self, message=None, *args, level=logging.ERROR):
-        if message is None:
-            message = ''
-        message = self.get_name() + ' ' + message
-        log_exception(self, message, *args, level=level)
+    def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
+        msg =  '%s %s ' % (self.get_name(), message)
+        log_exception(self, msg, *args, level=level, **kwargs)
 
     def debug(self, message=None, *args, **kwargs):
         if message is None:
@@ -197,15 +209,6 @@ class TangoServerPrototype(Device):
             file_name = self.__class__.__name__ + '.json'
         config_file = self.get_device_property('config_file', file_name)
         self.config = Configuration(config_file)
-
-    def set_config(self):
-        # set log level
-        level = self.config.get('log_level', logging.DEBUG)
-        self.logger.setLevel(level)
-        self.logger.log(level, 'Log level has been set to %s',
-                        logging.getLevelName(self.logger.getEffectiveLevel()))
-        self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
-        return True
 
     def configure_tango_logging(self):
         # add logging to TLS
