@@ -3,13 +3,13 @@ import logging
 import sys
 
 
-def exception_shot_info():
+def exception_short_info():
     ex_type, ex_value, traceback = sys.exc_info()
     return ' %s: %s' % (ex_type.__name__, ex_value)
 
 
 def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
-    tail = exception_shot_info()
+    tail = exception_short_info()
     if message is None:
         message = 'Exception'
     message += tail
@@ -30,7 +30,7 @@ def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
         logger.debug('Exception: ', exc_info=True)
         return message
     except:
-        tail = exception_shot_info()
+        tail = exception_short_info()
         print('Unexpected exception in log_exception ', tail)
         print('Previous exception:', message)
         return message
