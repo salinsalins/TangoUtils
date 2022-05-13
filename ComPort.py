@@ -27,7 +27,7 @@ class ComPort:
         with ComPort.dev_lock:
             if port in ComPort._ports:
                 ComPort._ports[port].logger.debug('Using existent COM port')
-                self.open_counter += 1
+                ComPort._ports[port].open_counter += 1
                 return
         self.lock = RLock()
         with self.lock:
