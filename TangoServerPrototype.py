@@ -48,6 +48,36 @@ class TangoServerPrototype(Device):
                           unit="", format="%7s",
                           doc="Server log level")
 
+    # ******** init_device ***********
+    def init_device(self):
+        Device.init_device(self)
+        self.set_state(DevState.INIT)
+        # default logger
+        self.logger = config_logger()
+        # device proxy for self
+        self.device_proxy = tango.DeviceProxy(self.get_name())
+        # default configuration
+        self.config = Configuration()
+        # config from file
+        self.read_config_from_file()
+        # config from properties
+        self.read_config_from_properties()
+        # set config
+        self.set_config()
+
+    def set_config(self):
+        # set log level
+        level = self.config.get('log_level', logging.DEBUG)
+        self.logger.setLevel(level)
+        self.logger.log(level, 'Log level has been set to %s',
+                        logging.getLevelName(self.logger.getEffectiveLevel()))
+        self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
+        self.set_state(DevState.RUNNING)
+        return True
+
+    def delete_device(self):
+        self.write_config_to_properties()
+
     # ******** attribute r/w procedures ***********
     def read_version(self):
         return self.server_version
@@ -71,8 +101,10 @@ class TangoServerPrototype(Device):
             # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
             level = TANGO_LOG_LEVELS[self.read_log_level()]
             tango.DeviceProxy(dserver.get_name()).command_inout('SetLoggingLevel',[[level],[self.get_name()]])
+            self.set_running()
         except:
-            log_exception(self, 'Can not set Log level to %s', value)
+            self.set_fault()
+            self.log_exception('Can not set Log level to %s', value)
 
     def set_tango_log_level(self, level=None):
         self.util = tango.Util.instance(self)
@@ -90,33 +122,7 @@ class TangoServerPrototype(Device):
     def set_log_level(self, level):
         self.write_log_level(level)
         msg = '%s Log level has been set to %s' % (self.get_name(), self.read_log_level())
-        self.logger.info(msg)
-
-    # ******** init_device ***********
-    def init_device(self):
-        Device.init_device(self)
-        self.tango_logging = False
-        # default LOGGER
-        self.logger = config_logger()
-        self.set_state(DevState.INIT)
-        # default properties
-        self.config = Configuration()
-        self.device_proxy = tango.DeviceProxy(self.get_name())
-        # config from file
-        self.read_config_from_file()
-        # config from properties
-        self.read_config_from_properties()
-        # set config
-        self.set_config()
-
-    def set_config(self):
-        # set log level
-        level = self.config.get('log_level', logging.DEBUG)
-        self.logger.setLevel(level)
-        self.logger.log(level, 'Log level has been set to %s',
-                        logging.getLevelName(self.logger.getEffectiveLevel()))
-        self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
-        return True
+        self.info(msg)
 
     # ******** additional helper functions ***********
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
@@ -200,8 +206,7 @@ class TangoServerPrototype(Device):
     def read_config_from_file(self, file_name=None):
         if file_name is None:
             file_name = self.__class__.__name__ + '.json'
-        config_file = self.get_device_property('config_file', file_name)
-        self.config = Configuration(config_file)
+        self.config = Configuration(file_name)
 
     def configure_tango_logging(self):
         # add logging to TLS
