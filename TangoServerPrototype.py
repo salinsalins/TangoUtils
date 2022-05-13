@@ -94,6 +94,7 @@ class TangoServerPrototype(Device):
 
     # ******** init_device ***********
     def init_device(self):
+        Device.init_device(self)
         self.tango_logging = False
         # default LOGGER
         self.logger = config_logger()
@@ -119,30 +120,22 @@ class TangoServerPrototype(Device):
 
     # ******** additional helper functions ***********
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
-        msg =  '%s %s ' % (self.get_name(), message)
+        msg = '%s %s ' % (self.get_name(), message)
         log_exception(self, msg, *args, level=level, **kwargs)
 
-    def debug(self, message=None, *args, **kwargs):
-        if message is None:
-            message = ''
+    def debug(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         self.logger.debug(message, *args, **kwargs)
 
-    def info(self, message=None, *args, **kwargs):
-        if message is None:
-            message = ''
+    def info(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         self.logger.info(message, *args, **kwargs)
 
-    def warning(self, message=None, *args, **kwargs):
-        if message is None:
-            message = ''
+    def warning(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         self.logger.warning(message, *args, **kwargs)
 
-    def error(self, message=None, *args, **kwargs):
-        if message is None:
-            message = ''
+    def error(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         self.logger.error(message, *args, **kwargs)
 
