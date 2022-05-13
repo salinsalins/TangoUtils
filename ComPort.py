@@ -15,7 +15,8 @@ class ComPort:
     _ports = {}
     dev_lock = Lock()
 
-    def __new__(cls, port, *args, **kwargs):
+    def __new__(cls, port: str, *args, **kwargs):
+        port = port.strip()
         with ComPort.dev_lock:
             if port in cls._ports:
                 return cls._ports[port]
