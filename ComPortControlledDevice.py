@@ -12,7 +12,6 @@ TERMINATOR = LF
 DEVICE_NAME = 'ComPortControlledDevice'
 DEVICE_FAMILY = 'ComPortControlledDevice Prototype'
 ID_OK = ''
-MIN_TIMEOUT = 0.001
 READ_TIMEOUT = 0.5
 
 
@@ -75,8 +74,7 @@ class ComPortControlledDevice:
             self.max_voltage = float(self.response[:-1])
         if self.send_command(b'CURR? MAX'):
             self.max_current = float(self.response[:-1])
-        msg = 'Device has been initialized %s' % self.id
-        self.logger.debug(msg)
+        self.logger.debug('Device has been initialized %s', self.id)
 
     def create_com_port(self):
         self.com = ComPort(self.port, *self.args, **self.kwargs)
@@ -91,45 +89,7 @@ class ComPortControlledDevice:
         try:
             self.com.close()
         except:
-            pass
-
-    def send_command(self, cmd, check_response=None):
-        self.io_count += 1
-        try:
-            # unify command
-            cmd = cmd.upper().strip()
-            # convert str to bytes
-            if isinstance(cmd, str):
-                cmd = str.encode(cmd)
-            if not cmd.endswith(LF):
-                cmd += LF
-            self.response = b''
-            t0 = time.perf_counter()
-            # write command
-            if not self.write(cmd):
-                return False
-            if check_response is None:
-                if b'?' in cmd:
-                    check_response = True
-                else:
-                    check_response = False
-            if not check_response:
-                return True
-            # read response (to LF by default)
-            result = self.read_response()
-            # reding time stats
-            dt = time.perf_counter() - t0
-            self.min_io_time = min(self.min_io_time, dt)
-            self.max_io_time = max(self.max_io_time, dt)
-            self.avg_io_time = (self.avg_io_time * (self.io_count - 1) + dt) / self.io_count
-            if not result:
-                self.io_error_count += 1
-            self.logger.debug('%s -> %s, %s, %4.0f ms', cmd, self.response, result, dt * 1000)
-            return result
-        except:
-            self.io_error_count += 1
-            log_exception(self, 'Command %s exception', cmd)
-            return False
+            log_exception(self)
 
     @property
     def timeout(self):
@@ -160,7 +120,7 @@ class ComPortControlledDevice:
             log_exception(self)
         return result
 
-    def read_until(self, terminator=LF, size=None, timeout=READ_TIMEOUT):
+    def read_until(self, terminator=TERMINATOR, size=None, timeout=READ_TIMEOUT):
         result = b''
         r = b''
         while terminator not in r:
@@ -168,17 +128,11 @@ class ComPortControlledDevice:
             if len(r) <= 0:
                 return result
             result += r
+            if self.timeout:
+                return result
             if size is not None and len(result) >= size:
                 return result
         return result
-
-    def read_response(self, expected=LF):
-        result = self.read_until(expected)
-        self.response = result
-        if expected not in result:
-            self.logger.error('Response %s without %s ', result, expected)
-            return False
-        return True
 
     def write(self, cmd):
         # t0 = time.perf_counter()
@@ -197,6 +151,52 @@ class ComPortControlledDevice:
         except:
             log_exception(self, 'Exception during write')
             return False
+
+    def send_command(self, cmd, check_response=None):
+        self.io_count += 1
+        try:
+            # unify command
+            cmd = cmd.upper().strip()
+            # convert str to bytes
+            if isinstance(cmd, str):
+                cmd = str.encode(cmd)
+            if not cmd.endswith(TERMINATOR):
+                cmd += TERMINATOR
+            self.response = b''
+            t0 = time.perf_counter()
+            # write command
+            if not self.write(cmd):
+                return False
+            if check_response is None:
+                if b'?' in cmd:
+                    check_response = True
+                else:
+                    check_response = False
+            if not check_response:
+                return True
+            # read response (to LF by default)
+            result = self.read_response()
+            # reding time stats
+            dt = time.perf_counter() - t0
+            self.min_io_time = min(self.min_io_time, dt)
+            self.max_io_time = max(self.max_io_time, dt)
+            self.avg_io_time = (self.avg_io_time * (self.io_count - 1) + dt) / self.io_count
+            if not result:
+                self.io_error_count += 1
+            self.logger.debug('%s -> %s, %s, %4.0f ms', cmd, self.response, result, dt * 1000)
+            return result
+        except:
+            self.io_error_count += 1
+            log_exception(self, 'Command %s exception', cmd)
+            return False
+
+    def read_response(self, expected=TERMINATOR):
+        result = self.read_until(expected)
+        self.response = result
+        if expected not in result:
+            self.logger.error('Response %s without %s ', result, expected)
+            return False
+        return True
 
     def read_value(self, cmd, v_type=float):
         try:
@@ -309,11 +309,7 @@ class ComPortControlledDevice:
         self.ready = False
         self.close_com_port()
         self.com = self.create_com_port()
-        # self.com.reset_output_buffer()
-        # self.com.reset_input_buffer()
-        # self.send_command('*IDN?', False)
         self.init()
-        # print(self.read_errors())
 
     def initialized(self):
         return self.ready
