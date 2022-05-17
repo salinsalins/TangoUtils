@@ -72,7 +72,6 @@ class ComPort:
                 log_exception(self)
                 self._device = EmptyComPort()
 
-
     def read(self, *args, **kwargs):
         with ComPort._ports[self.port].lock:
             if ComPort._ports[self.port].ready:
@@ -91,8 +90,8 @@ class ComPort:
         with ComPort._ports[self.port].lock:
             if ComPort._ports[self.port].ready:
                 try:
-                        ComPort._ports[self.port]._device.reset_input_buffer()
-                        return True
+                    ComPort._ports[self.port]._device.reset_input_buffer()
+                    return True
                 except:
                     return False
             else:
@@ -102,8 +101,8 @@ class ComPort:
         with ComPort._ports[self.port].lock:
             if ComPort._ports[self.port].ready:
                 try:
-                        ComPort._ports[self.port]._device.reset_output_buffer()
-                        return True
+                    ComPort._ports[self.port]._device.reset_output_buffer()
+                    return True
                 except:
                     return False
             else:
@@ -130,7 +129,7 @@ class ComPort:
         with ComPort._ports[self.port].lock:
             if ComPort._ports[self.port].ready:
                 try:
-                        return ComPort._ports[self.port]._device.in_waiting
+                    return ComPort._ports[self.port]._device.in_waiting
                 except:
                     return False
             else:
@@ -159,5 +158,3 @@ class EmptyComPort():
 
     def read(self, *args, **kwargs):
         return b''
-
-
