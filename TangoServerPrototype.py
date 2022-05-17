@@ -127,23 +127,23 @@ class TangoServerPrototype(Device):
     # ******** additional helper functions ***********
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         msg = '%s %s ' % (self.get_name(), message)
-        log_exception(self, msg, *args, level=level, **kwargs)
+        log_exception(self, msg, *args, level=level, stacklevel=3, **kwargs)
 
     def debug(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.debug(message, *args, **kwargs)
+        self.logger.debug(message, *args, stacklevel=2, **kwargs)
 
     def info(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.info(message, *args, **kwargs)
+        self.logger.info(message, *args, stacklevel=2, **kwargs)
 
     def warning(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.warning(message, *args, **kwargs)
+        self.logger.warning(message, *args, stacklevel=2, **kwargs)
 
     def error(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.error(message, *args, **kwargs)
+        self.logger.error(message, *args, stacklevel=2, **kwargs)
 
     def get_device_property(self, prop: str, default=None):
         try:

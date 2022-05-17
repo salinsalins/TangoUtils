@@ -26,7 +26,9 @@ def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
                 logger = logger.LOGGER
         if not isinstance(logger, logging.Logger):
             return message
-        logger.log(level, message, stacklevel=2, **kwargs)
+        if 'stacklevel' not in kwargs:
+            kwargs['stacklevel'] = 2
+        logger.log(level, message, **kwargs)
         logger.debug('Exception: ', exc_info=True)
         return message
     except:

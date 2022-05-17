@@ -32,7 +32,7 @@ class ComPort:
                 return
         self.lock = RLock()
         with self.lock:
-            self.logger = kwargs.pop('logger', config_logger())
+            self.logger = kwargs.get('logger', config_logger())
             self.open_counter = 1
             emulated = kwargs.pop('emulated', None)
             self.port = port
