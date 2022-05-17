@@ -27,26 +27,36 @@ class ComPort:
         # use existed device
         with ComPort.dev_lock:
             if port in ComPort._ports:
+                if not ComPort._ports[port].ready:
+                    ComPort._ports[port]._device.close()
+                    ComPort._ports[port].open()
                 ComPort._ports[port].logger.debug('Using existent COM port')
                 ComPort._ports[port].open_counter += 1
                 return
         self.lock = RLock()
+        self.logger = kwargs.pop('logger', config_logger())
+        self.emulated = kwargs.pop('emulated', None)
+        self.open_counter = 1
+        self.port = port
+        self.args = args
+        self.kwargs = kwargs
+        # address for RS485 devices
+        self.current_addr = -1
+        self._device = None
+        self.open()
+        with ComPort.dev_lock:
+            ComPort._ports[self.port] = self
+        self.logger.debug('Port %s has been initialized', self.port)
+
+    def open(self):
         with self.lock:
-            self.logger = kwargs.pop('logger', config_logger())
-            self.open_counter = 1
-            emulated = kwargs.pop('emulated', None)
-            self.port = port
-            self.args = args
-            self.kwargs = kwargs
-            # address for RS485 devices
-            self.current_addr = -1
             # initialize real device
             if self.port.startswith('FAKE') or self.port.startswith('EMULATED'):
-                if emulated is None:
+                if self.emulated is None:
                     self._device = None
                     self.logger.error('Emulated port class not defined %s', self.port)
                 else:
-                    self._device = emulated(self.port, *self.args, **self.kwargs)
+                    self._device = self.emulated(self.port, *self.args, **self.kwargs)
             elif (self.port.upper().startswith('COM')
                   or self.port.startswith('tty')
                   or self.port.startswith('/dev')
@@ -56,9 +66,6 @@ class ComPort:
                 self._device = serial.Serial(self.port, *self.args, **self.kwargs)
             else:
                 self._device = MoxaTCPComPort(self.port, *self.args, **self.kwargs)
-            with ComPort.dev_lock:
-                ComPort._ports[self.port] = self
-            self.logger.debug('Port %s has been initialized', self.port)
 
     def read(self, *args, **kwargs):
         with ComPort._ports[self.port].lock:
