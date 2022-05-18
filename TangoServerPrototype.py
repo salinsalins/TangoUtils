@@ -55,7 +55,8 @@ class TangoServerPrototype(Device):
         # default logger
         self.logger = config_logger()
         # device proxy for self
-        self.device_proxy = tango.DeviceProxy(self.get_name())
+        self.device_proxy = None
+        # self.device_proxy = tango.DeviceProxy(self.get_name())
         # default configuration
         self.config = Configuration()
         # config from file
@@ -147,7 +148,9 @@ class TangoServerPrototype(Device):
 
     def get_device_property(self, prop: str, default=None):
         try:
-            pr = self.device_proxy.get_property(prop)[prop]
+            db = tango.Database()
+            pr = db.get_device_property(self.get_name(), prop)[prop]
+            # pr = self.device_proxy.get_property(prop)[prop]
             result = None
             if len(pr) > 0:
                 result = pr[0]
@@ -163,30 +166,38 @@ class TangoServerPrototype(Device):
     def set_device_property(self, prop: str, value: str):
         prop = str(prop)
         try:
-            self.device_proxy.put_property({prop: value})
+            db = tango.Database()
+            # self.device_proxy.put_property({prop: value})
+            db.put_device_property(self.get_name(), {prop: [value]})
         except:
             self.log_exception('Error writing property %s for %s' % (prop, self.get_name()))
 
     def get_attribute_property(self, attr_name, prop_name=None):
-        db = self.device_proxy.get_device_db()
+        db = tango.Database()
+        # db = self.device_proxy.get_device_db()
         apr = db.get_device_attribute_property(self.get_name(), attr_name)
         if prop_name is None:
             return apr[attr_name]
         return apr[attr_name][prop_name][0]
 
     def set_attribute_property(self, attr_name, prop_name, value):
-        db = self.device_proxy.get_device_db()
+        db = tango.Database()
+        # db = self.device_proxy.get_device_db()
         apr = db.get_device_attribute_property(self.get_name(), attr_name)
         apr[attr_name][prop_name] = str(value)
         db.put_device_attribute_property(self.get_name(), apr)
 
     def properties(self, fltr: str = '*'):
         # returns dictionary with device properties
-        names = self.device_proxy.get_property_list(fltr)
-        if len(names) > 0:
-            return self.device_proxy.get_property(names)
-        else:
-            return {}
+        db = tango.Database()
+        names = db.get_device_property_list(self.get_name(), fltr).value_string
+        # names = self.device_proxy.get_property_list(fltr)
+        return {n: db.get_device_property(self.get_name(), n)[n] for n in names}
+        # if len(names) > 0:
+        #     # return db.get_device_property(self.get_name(), names)
+        #     return self.device_proxy.get_property(names)
+        # else:
+        #     return {}
 
     def read_config_from_properties(self):
         props = self.properties()
@@ -199,9 +210,9 @@ class TangoServerPrototype(Device):
                 self.config[p] = props[p][0]
 
     def write_config_to_properties(self):
-        # for p in self.config.data:
-        #     self.set_device_property(p, self.config.data[p])
-        self.device_proxy.put_property(self.config.data)
+        for p in self.config.data:
+             self.set_device_property(p, self.config.data[p])
+        # self.device_proxy.put_property(self.config.data)
 
     def read_config_from_file(self, file_name=None):
         if file_name is None:
