@@ -1,258 +1,54 @@
-import inspect
-import json
 import logging
-import sys
-import time
 
-# PyQt dependent definitions
-try:
-    from PyQt5 import QtWidgets
-    from PyQt5.QtCore import QSize, QPoint
-    from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox
+import tango
+from tango.server import Device
 
-
-    def get_widget_state(wdgt, config, name=None):
-        try:
-            if name is None:
-                name = wdgt.objectName()
-            if isinstance(wdgt, QLineEdit):
-                config[name] = str(wdgt.text())
-            elif isinstance(wdgt, QComboBox):
-                config[name] = {'items': [str(wdgt.itemText(k)) for k in range(wdgt.count())],
-                                'index': wdgt.currentIndex()}
-            elif isinstance(wdgt, QtWidgets.QAbstractButton):
-                config[name] = wdgt.isChecked()
-            elif isinstance(wdgt, QPlainTextEdit) or isinstance(wdgt, QtWidgets.QTextEdit):
-                config[name] = str(wdgt.toPlainText())
-            elif isinstance(wdgt, QtWidgets.QSpinBox) or isinstance(wdgt, QtWidgets.QDoubleSpinBox):
-                config[name] = wdgt.value()
-        except:
-            return
-
-
-    def set_widget_state(obj, config, name=None):
-        try:
-            if name is None:
-                name = obj.objectName()
-            if name not in config:
-                return
-            if isinstance(obj, QLineEdit):
-                obj.setText(config[name])
-            elif isinstance(obj, QComboBox):
-                obj.setUpdatesEnabled(False)
-                bs = obj.blockSignals(True)
-                obj.clear()
-                obj.addItems(config[name]['items'])
-                obj.blockSignals(bs)
-                obj.setUpdatesEnabled(True)
-                obj.setCurrentIndex(config[name]['index'])
-                # Force index change event in the case of index=0
-                if config[name]['index'] == 0:
-                    obj.currentIndexChanged.emit(0)
-            elif isinstance(obj, QtWidgets.QAbstractButton):
-                obj.setChecked(config[name])
-            elif isinstance(obj, QPlainTextEdit) or isinstance(obj, QtWidgets.QTextEdit):
-                obj.setPlainText(config[name])
-            elif isinstance(obj, QtWidgets.QSpinBox) or isinstance(obj, QtWidgets.QDoubleSpinBox):
-                obj.setValue(config[name])
-        except:
-            return
-
-
-    def restore_settings(obj, file_name='config.json', widgets=()):
-        try:
-            if not hasattr(obj, 'config'):
-                obj.config = {}
-                try:
-                    # open and read config file
-                    with open(file_name, 'r') as configfile:
-                        s = configfile.read()
-                    # interpret file contents by json
-                    obj.config = json.loads(s)
-                except:
-                    log_exception(obj)
-                # restore log level
-                if 'log_level' in obj.config:
-                    v = obj.config['log_level']
-                    obj.logger.setLevel(v)
-                # restore window size and position (can be changed by user during operation)
-                if 'main_window' in obj.config:
-                    obj.resize(QSize(obj.config['main_window']['size'][0], obj.config['main_window']['size'][1]))
-                    obj.move(QPoint(obj.config['main_window']['position'][0], obj.config['main_window']['position'][1]))
-                # --- removed - should be configured in the UI file
-                # if 'icon_file' in obj.config:
-                #     obj.setWindowIcon(QtGui.QIcon(obj.config['icon_file']))  # icon
-                # if 'application_name' in obj.config:
-                #     obj.setWindowTitle(obj.config['application_name'])       # title
-                # restore widgets state
-                for w in widgets:
-                    set_widget_state(w, obj.config)
-                # OK message
-                obj.logger.info('Configuration restored from %s', file_name)
-        except:
-            log_exception(obj.logger)
-        return obj.config
-
-
-    def save_settings(obj, file_name='config.json', widgets=()):
-        try:
-            # save current window size and position
-            p = obj.pos()
-            s = obj.size()
-            obj.config['main_window'] = {'size': (s.width(), s.height()), 'position': (p.x(), p.y())}
-            # get state of widgets
-            for w in widgets:
-                get_widget_state(w, obj.config)
-            # write to file
-            with open(file_name, 'w') as configfile:
-                configfile.write(json.dumps(obj.config, indent=4))
-            # OK message
-            obj.logger.info('Configuration saved to %s', file_name)
-            return True
-        except:
-            log_exception(obj.logger)
-            return False
-
-except:
-    pass
-
-# tango dependent definitions
-try:
-    import tango
-    from tango.server import Device
-
-    # Handler for logging to the tango log system
-    class TangoLogHandler(logging.Handler):
-        def __init__(self, device: tango.server.Device, level=logging.DEBUG, formatter=None):
-            super().__init__(level)
-            self.device = device
-            if formatter is None:
-                try:
-                    self.setFormatter(config_logger.log_formatter)
-                except:
-                    pass
-            else:
-                self.setFormatter(formatter)
-
-        def emit(self, record):
-            level = self.level
-            if level >= logging.CRITICAL:
-                log_entry = self.format(record)
-                self.device.fatal_stream(log_entry)
-            elif level >= logging.WARNING:
-                log_entry = self.format(record)
-                self.device.error_stream(log_entry)
-            elif level >= logging.INFO:
-                log_entry = self.format(record)
-                self.device.info_stream(log_entry)
-            elif level >= logging.DEBUG:
-                log_entry = self.format(record)
-                self.device.debug_stream(log_entry)
-
-
-    def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
-        config = get_attribute_config(dp, attrib_name)
-        try:
-            coeff = float(config.display_unit)
-        except:
-            coeff = 1.0
-        return coeff
-
-
-    def get_attribute_config(dp: tango.DeviceProxy, attrib_name: str):
-        return dp.get_attribute_config_ex(attrib_name)[0]
-
-except:
-    pass
-
-
-# Logging to the text panel
-class TextEditHandler(logging.Handler):
-    def __init__(self, widget=None):
-        logging.Handler.__init__(self)
-        self.widget = widget
-
-    def emit(self, record):
-        log_entry = self.format(record)
-        if self.widget is not None:
-            self.widget.appendPlainText(log_entry)
-
+import config_logger
 
 TANGO_LOG_LEVELS = {'DEBUG': 5, 'INFO': 4, 'WARNING': 3, 'ERROR': 2, 'FATAL': 1, 'OFF': 0,
                     5: 'DEBUG', 4: 'INFO', 3: 'WARNING', 2: 'ERROR', 1: 'FATAL', 0: 'OFF'}
 
-# log format string with process id and thread id
-LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
-                    '%(funcName)s(%(lineno)s) %(message)s'
-# log format string without process id and thread id
-LOG_FORMAT_STRING_SHORT = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s ' \
-                          '%(funcName)s(%(lineno)s) %(message)s'
 
-
-def config_logger(name=None, level: int = logging.DEBUG, format_string=None, force_add_handler=False):
-    if name is None:
-        if hasattr(config_logger, 'logger'):
-            return config_logger.logger
+# Handler for logging to the tango log system
+class TangoLogHandler(logging.Handler):
+    def __init__(self, device: tango.server.Device, level=logging.DEBUG, formatter=None):
+        super().__init__(level)
+        self.device = device
+        if formatter is None:
+            try:
+                self.setFormatter(config_logger.log_formatter)
+            except:
+                print('ERROR: Formatter is not defined for TangoLogHandler')
         else:
-            name = __name__
-    logger = logging.getLogger(name)
-    config_logger.logger = logger
-    logger.propagate = False
-    logger.setLevel(level)
-    # do not add extra console handlers if logger already has one. Add any later if needed.
-    if logger.hasHandlers() and not force_add_handler:
-        return logger
-    if format_string is None:
-        format_string = LOG_FORMAT_STRING
-    log_formatter = logging.Formatter(format_string, datefmt='%H:%M:%S')
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(log_formatter)
-    logger.addHandler(console_handler)
-    config_logger.console_handler = console_handler
-    config_logger.log_formatter = log_formatter
-    return logger
+            self.setFormatter(formatter)
+
+    def emit(self, record):
+        level = self.level
+        if level >= logging.CRITICAL:
+            log_entry = self.format(record)
+            self.device.fatal_stream(log_entry)
+        elif level >= logging.WARNING:
+            log_entry = self.format(record)
+            self.device.error_stream(log_entry)
+        elif level >= logging.INFO:
+            log_entry = self.format(record)
+            self.device.info_stream(log_entry)
+        elif level >= logging.DEBUG:
+            log_entry = self.format(record)
+            self.device.debug_stream(log_entry)
 
 
-def timeit(method):
-    def timed(*args, **kw):
-        ts = time.time()
-        result = method(*args, **kw)
-        te = time.time()
-        if te - ts > 0.01:
-            print('%r %2.2f sec' % (method.__name__, te - ts))
-        return result
-
-    return timed
-
-
-def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
-    ex_type, ex_value, traceback = sys.exc_info()
-    tail = ' %s: %s' % (ex_type.__name__, ex_value)
-    if message is None:
-        message = 'Exception'
-    message += tail
-    message = message % args
-    if isinstance(logger, str):
-        # caller = sys._getframe(1).f_code.co_name
-        logger = inspect.stack()[1].frame.f_locals['self'].logger
-        # raise ValueError('Incorrect argument for logger')
-    if not isinstance(logger, logging.Logger):
-        if hasattr(logger, 'logger'):
-            logger = logger.logger
-        elif hasattr(logger, 'LOGGER'):
-            logger = logger.LOGGER
-    if not isinstance(logger, logging.Logger):
-        return message
+def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
+    config = get_attribute_config(dp, attrib_name)
     try:
-        logger.log(level, message, stacklevel=2, **kwargs)
-        logger.debug('Exception: ', exc_info=True)
-        return message
+        coeff = float(config.display_unit)
     except:
-        ex_type, ex_value, traceback = sys.exc_info()
-        tail = ' %s: %s' % (ex_type.__name__, ex_value)
-        print('Unexpected exception in log_exception ', tail)
-        print('Previous exception:', message)
-        return message
+        coeff = 1.0
+    return coeff
+
+
+def get_attribute_config(dp: tango.DeviceProxy, attrib_name: str):
+    return dp.get_attribute_config_ex(attrib_name)[0]
 
 
 def split_attribute_name(name):
@@ -284,60 +80,3 @@ def convert_polling_status(status_string_array, name: str):
                 except:
                     pass
     return result
-
-
-class Configuration:
-    def __init__(self, file_name=None, default=None):
-        if default is None:
-            default = {}
-        self.data = default
-        self.file_name = None
-        self.read(file_name)
-
-    def get(self, name, default=None):
-        try:
-            result = self.data.get(name, default)
-            if default is not None:
-                result = type(default)(result)
-        except:
-            result = default
-        self.data[name] = result
-        return result
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, key):
-        return self.data[key]
-
-    def __setitem__(self, key, value):
-        self.data[key] = value
-        return
-
-    def __contains__(self, key):
-        return key in self.data
-
-    def read(self, file_name, append=True):
-        try:
-            self.file_name = file_name
-            # Read config from file
-            with open(file_name, 'r') as configfile:
-                data = json.loads(configfile.read())
-            # import data
-            if append:
-                for d in data:
-                    self.data[d] = data[d]
-            else:
-                self.data = data
-            return True
-        except:
-            return False
-
-    def write(self, file_name=None):
-        if file_name is None:
-            file_name = self.file_name
-        if file_name is None:
-            return False
-        with open(file_name, 'w') as configfile:
-            configfile.write(json.dumps(self.data, indent=4))
-        return True
