@@ -16,8 +16,10 @@ import tango
 from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command, pipe, device_property
 
-from TangoUtils import config_logger, Configuration, log_exception, TangoLogHandler, TANGO_LOG_LEVELS
-from config_logger import LOG_FORMAT_STRING
+from Configuration import Configuration
+from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS
+from config_logger import LOG_FORMAT_STRING, config_logger
+from log_exception import log_exception
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
@@ -218,8 +220,8 @@ class TangoServerPrototype(Device):
                 self.config[p] = props[p][0]
 
     def write_config_to_properties(self):
-        for p in self.config.data:
-             self.set_device_property(p, self.config.data[p])
+        for p in self.config:
+             self.set_device_property(p, self.config[p])
         # self.device_proxy.put_property(self.config.data)
 
     def read_config_from_file(self, file_name=None):
@@ -231,7 +233,6 @@ class TangoServerPrototype(Device):
         # add logging to TLS
         tlh = TangoLogHandler(self)
         self.logger.addHandler(tlh)
-        # configure tango logging
 
         # set logging level via dserver !!! Working only after server start, not during init !!!
         # util = tango.Util.instance()

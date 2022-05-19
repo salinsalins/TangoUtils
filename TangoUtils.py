@@ -18,7 +18,11 @@ class TangoLogHandler(logging.Handler):
             try:
                 self.setFormatter(config_logger.log_formatter)
             except:
-                print('ERROR: Formatter is not defined for TangoLogHandler')
+                try:
+                    log_formatter = logging.Formatter(config_logger.LOG_FORMAT_STRING, datefmt='%H:%M:%S')
+                    self.setFormatter(log_formatter)
+                except:
+                    print('ERROR: Formatter is not defined for TangoLogHandler')
         else:
             self.setFormatter(formatter)
 
