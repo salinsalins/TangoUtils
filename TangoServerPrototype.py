@@ -6,6 +6,7 @@ Shot dumper tango device server
 A. L. Sanin, started 05.07.2021
 """
 import logging
+import re
 import sys
 import json
 import time
@@ -16,6 +17,7 @@ from tango import AttrQuality, AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command, pipe, device_property
 
 from TangoUtils import config_logger, Configuration, log_exception, TangoLogHandler, TANGO_LOG_LEVELS
+from config_logger import LOG_FORMAT_STRING
 
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
@@ -54,6 +56,7 @@ class TangoServerPrototype(Device):
         self.set_state(DevState.INIT)
         # default logger
         self.logger = config_logger()
+        # self.logger = config_logger(format_string=self.get_name() + ' ' + LOG_FORMAT_STRING)
         # device proxy for self
         self.device_proxy = None
         # self.device_proxy = tango.DeviceProxy(self.get_name())
@@ -144,6 +147,7 @@ class TangoServerPrototype(Device):
 
     def error(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
+        # kwargs['stacklevel'] = kwargs.copy().pop('stacklevel', 1) +1
         self.logger.error(message, *args, stacklevel=2, **kwargs)
 
     def get_device_property(self, prop: str, default=None):
@@ -188,16 +192,20 @@ class TangoServerPrototype(Device):
         db.put_device_attribute_property(self.get_name(), apr)
 
     def properties(self, fltr: str = '*'):
+        reg = fltr.replace('?', '.').replace('*', '.+')
         # returns dictionary with device properties
         db = tango.Database()
         names = db.get_device_property_list(self.get_name(), fltr).value_string
         # names = self.device_proxy.get_property_list(fltr)
-        return {n: db.get_device_property(self.get_name(), n)[n] for n in names}
+        return {n: db.get_device_property(self.get_name(), n)[n] for n in names if re.match(reg, n)}
         # if len(names) > 0:
         #     # return db.get_device_property(self.get_name(), names)
         #     return self.device_proxy.get_property(names)
         # else:
         #     return {}
+
+    def get_device_properties(self):
+        return self.properties()
 
     def read_config_from_properties(self):
         props = self.properties()
