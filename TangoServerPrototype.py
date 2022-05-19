@@ -1,24 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 """
-Shot dumper tango device server
+Prototype for Python based tango device server
 A. L. Sanin, started 05.07.2021
 """
+
 import logging
 import re
-import sys
-import json
 import time
 
-import numpy
 import tango
-from tango import AttrQuality, AttrWriteType, DispLevel, DevState
-from tango.server import Device, attribute, command, pipe, device_property
+from tango import AttrWriteType, DispLevel, DevState
+from tango.server import Device, attribute, command
 
 from Configuration import Configuration
 from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS
-from config_logger import LOG_FORMAT_STRING, config_logger
+from config_logger import config_logger
 from log_exception import log_exception
 
 ORGANIZATION_NAME = 'BINP'
@@ -106,7 +103,7 @@ class TangoServerPrototype(Device):
             dserver = util.get_dserver_device()
             # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
             level = TANGO_LOG_LEVELS[self.read_log_level()]
-            tango.DeviceProxy(dserver.get_name()).command_inout('SetLoggingLevel',[[level],[self.get_name()]])
+            tango.DeviceProxy(dserver.get_name()).command_inout('SetLoggingLevel', [[level], [self.get_name()]])
             self.set_running()
         except:
             self.set_fault()
@@ -221,7 +218,7 @@ class TangoServerPrototype(Device):
 
     def write_config_to_properties(self):
         for p in self.config:
-             self.set_device_property(p, self.config[p])
+            self.set_device_property(p, self.config[p])
         # self.device_proxy.put_property(self.config.data)
 
     def read_config_from_file(self, file_name=None):
@@ -261,7 +258,6 @@ class TangoServerPrototype(Device):
     #     if name in self.config:
     #         return self.config(name)
     #     super().__getttr__(name)
-
 
 
 def looping():
