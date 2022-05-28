@@ -6,8 +6,6 @@ A. L. Sanin, started 05.07.2021
 """
 
 import logging
-import re
-import time
 
 import tango
 from tango import AttrWriteType, DispLevel, DevState
@@ -21,7 +19,7 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '0.0'
+APPLICATION_VERSION = '2.0'
 
 
 class TangoServerPrototype(Device):
@@ -41,7 +39,7 @@ class TangoServerPrototype(Device):
                      display_level=DispLevel.OPERATOR,
                      access=AttrWriteType.READ,
                      unit="", format="%s",
-                     doc="Server type")
+                     doc="Server name")
 
     log_level = attribute(label="log_level", dtype=str,
                           display_level=DispLevel.EXPERT,
@@ -191,12 +189,14 @@ class TangoServerPrototype(Device):
         db.put_device_attribute_property(self.get_name(), apr)
 
     def properties(self, fltr: str = '*'):
-        reg = fltr.replace('?', '.').replace('*', '.+')
+        # reg = fltr.replace('?', '.').replace('*', '.+')
         # returns dictionary with device properties
         db = tango.Database()
         names = db.get_device_property_list(self.get_name(), fltr).value_string
         # names = self.device_proxy.get_property_list(fltr)
-        return {n: db.get_device_property(self.get_name(), n)[n] for n in names if re.match(reg, n)}
+        d_name = self.get_name()
+        return {nm: db.get_device_property(d_name, nm)[nm] for nm in names}
+        # return {n: db.get_device_property(self.get_name(), n)[n] for n in names if re.match(reg, n)}
         # if len(names) > 0:
         #     # return db.get_device_property(self.get_name(), names)
         #     return self.device_proxy.get_property(names)
@@ -260,16 +260,16 @@ class TangoServerPrototype(Device):
     #     super().__getttr__(name)
 
 
-def looping():
-    print('Empty loop. Overwrite or disable.')
-    time.sleep(1.0)
-    pass
-
-
-def post_init_callback():
-    print('Empty post_init_callback. Overwrite or disable.')
-    pass
-
-
-if __name__ == "__main__":
-    TangoServerPrototype.run_server(post_init_callback=post_init_callback, event_loop=looping)
+# def looping():
+#     print('Empty loop. Overwrite or disable.')
+#     time.sleep(1.0)
+#     pass
+#
+#
+# def post_init_callback():
+#     print('Empty post_init_callback. Overwrite or disable.')
+#     pass
+#
+#
+# if __name__ == "__main__":
+#     TangoServerPrototype.run_server(post_init_callback=post_init_callback, event_loop=looping)
