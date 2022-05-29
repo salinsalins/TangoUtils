@@ -133,10 +133,16 @@ class TangoDeviceProperties:
 
     def __setitem__(self, key, value):
         self.data[key] = value
+        self.set_device_property(str(key), str(value))
         return
 
     def __contains__(self, key):
         return key in self.data
+
+    def __delitem__(self, key):
+        if key in self.data:
+            self.data.pop(key)
+            self.delete_device_property(key)
 
     def get_device_property(self, prop: str, default=None):
         try:
@@ -153,6 +159,12 @@ class TangoDeviceProperties:
         except:
             return default
 
+    def delete_device_property(self, prop: str):
+        try:
+            self.db.delete_device_property(self.name, prop)
+        except:
+            pass
+
     def set_device_property(self, prop: str, value: str):
         prop = str(prop)
         try:
@@ -161,3 +173,21 @@ class TangoDeviceProperties:
         except:
             return False
 
+    def get(self, key, default=None):
+        try:
+            result = self.data.get(key, default)
+            if default is not None and result is not None:
+                result = type(default)(result)
+        except:
+            result = default
+        self.__setitem__(key, result)
+        return result
+
+    def pop(self, key, default=None):
+        try:
+            result = self.data.pop(key, default)
+            if default is not None and result is not None:
+                result = type(default)(result)
+        except:
+            result = default
+        return result
