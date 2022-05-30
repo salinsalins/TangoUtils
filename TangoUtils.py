@@ -124,7 +124,7 @@ class TangoDeviceProperties:
             raise ValueError('Parameter should be string or tango.server.Device')
         self.db = tango.Database()
         names = self.db.get_device_property_list(self.name, '*').value_string
-        self.data = {nm: self.db.get_device_property(self.name, nm)[nm] for nm in names}
+        self.data = {nm: self.get_device_property(nm) for nm in names}
 
     def __getitem__(self, key):
         if key not in self.data:
@@ -133,7 +133,7 @@ class TangoDeviceProperties:
 
     def __setitem__(self, key, value):
         self.data[key] = value
-        self.set_device_property(str(key), str(value))
+        self.set_device_property(str(key), value)
         return
 
     def __contains__(self, key):
@@ -146,16 +146,13 @@ class TangoDeviceProperties:
 
     def get_device_property(self, prop: str, default=None):
         try:
-            result = None
-            pr = self.db.get_device_property(self.name, prop)[prop]
-            if len(pr) > 0:
-                result = pr[0]
+            result = self.db.get_device_property(self.name, prop)[prop]
             if default is None:
                 return result
-            if result is None or result == '':
+            if result is None or len(result) <= 0:
                 return default
-            else:
-                return type(default)(result)
+            # return type(default)(result)
+            return result
         except:
             return default
 
@@ -165,10 +162,18 @@ class TangoDeviceProperties:
         except:
             pass
 
-    def set_device_property(self, prop: str, value: str):
-        prop = str(prop)
+    def set_device_property(self, prop: str, value):
+        prop_name = str(prop)
         try:
-            self.db.put_device_property(self.name, {prop: [value]})
+            data = []
+            if isinstance(value, str):
+                data = [value]
+            elif isinstance(value, list) or isinstance(value, tuple):
+                for v in value:
+                    data.append(str(v))
+            else:
+                data = [str(value)]
+            self.db.put_device_property(self.name, {prop_name: data})
             return True
         except:
             return False
