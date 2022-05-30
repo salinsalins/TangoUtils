@@ -12,7 +12,7 @@ from tango import AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
 
 from Configuration import Configuration
-from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS
+from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties
 from config_logger import config_logger
 from log_exception import log_exception
 
@@ -62,6 +62,7 @@ class TangoServerPrototype(Device):
         # config from file
         self.read_config_from_file()
         # config from properties
+        self.properties = TangoDeviceProperties()
         self.read_config_from_properties()
         # set config
         self.set_config()
@@ -188,26 +189,26 @@ class TangoServerPrototype(Device):
         apr[attr_name][prop_name] = str(value)
         db.put_device_attribute_property(self.get_name(), apr)
 
-    def properties(self, fltr: str = '*'):
-        # reg = fltr.replace('?', '.').replace('*', '.+')
-        # returns dictionary with device properties
-        db = tango.Database()
-        names = db.get_device_property_list(self.get_name(), fltr).value_string
-        # names = self.device_proxy.get_property_list(fltr)
-        d_name = self.get_name()
-        return {nm: db.get_device_property(d_name, nm)[nm] for nm in names}
-        # return {n: db.get_device_property(self.get_name(), n)[n] for n in names if re.match(reg, n)}
-        # if len(names) > 0:
-        #     # return db.get_device_property(self.get_name(), names)
-        #     return self.device_proxy.get_property(names)
-        # else:
-        #     return {}
+    # def properties(self, fltr: str = '*'):
+    #     # reg = fltr.replace('?', '.').replace('*', '.+')
+    #     # returns dictionary with device properties
+    #     db = tango.Database()
+    #     names = db.get_device_property_list(self.get_name(), fltr).value_string
+    #     # names = self.device_proxy.get_property_list(fltr)
+    #     d_name = self.get_name()
+    #     return {nm: db.get_device_property(d_name, nm)[nm] for nm in names}
+    #     # return {n: db.get_device_property(self.get_name(), n)[n] for n in names if re.match(reg, n)}
+    #     # if len(names) > 0:
+    #     #     # return db.get_device_property(self.get_name(), names)
+    #     #     return self.device_proxy.get_property(names)
+    #     # else:
+    #     #     return {}
 
-    def get_device_properties(self):
-        return self.properties()
-
+    # def get_device_properties(self):
+    #     return self.properties()
+    #
     def read_config_from_properties(self):
-        props = self.properties()
+        props = self.properties
         if not hasattr(self, 'config'):
             self.config = Configuration()
         for p in props:

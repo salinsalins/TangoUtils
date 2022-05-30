@@ -116,7 +116,7 @@ def set_device_property(device_name, prop_name, value: str):
 class TangoDeviceProperties:
     def __init__(self, device=None):
         if device is None:
-            device = inspect.stack()[1].frame.f_locals['self']
+            device = inspect.stack()[1].frame.f_locals['self'].get_name()
         if isinstance(device, tango.server.Device):
             self.name = device.get_name()
         elif isinstance(device, str):
@@ -144,6 +144,18 @@ class TangoDeviceProperties:
         if key in self.data:
             self.data.pop(key)
             self.delete_device_property(key)
+
+    def __iter__(self):
+        return iter(self.data)
+
+    def __reversed__(self):
+        return reversed(self.data)
+
+    def __len__(self):
+        return len(self.data)
+
+    def __call__(self):
+        return self.data
 
     def get_device_property(self, prop: str, default=None):
         try:
