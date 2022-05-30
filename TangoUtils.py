@@ -4,6 +4,7 @@ import logging
 import config_logger
 import tango
 from tango.server import Device
+# from tango._tango import DbData, DbDatum
 
 TANGO_LOG_LEVELS = {'DEBUG': 5, 'INFO': 4, 'WARNING': 3, 'ERROR': 2, 'FATAL': 1, 'OFF': 0,
                     5: 'DEBUG', 4: 'INFO', 3: 'WARNING', 2: 'ERROR', 1: 'FATAL', 0: 'OFF'}
@@ -132,7 +133,7 @@ class TangoDeviceProperties:
         return self.data[key]
 
     def __setitem__(self, key, value):
-        self.data[key] = value
+        self.data[str(key)] = self.convert_value(value)
         self.set_device_property(str(key), value)
         return
 
@@ -148,11 +149,11 @@ class TangoDeviceProperties:
         try:
             result = self.db.get_device_property(self.name, prop)[prop]
             if default is None:
-                return result
+                return self.convert_value(result)
             if result is None or len(result) <= 0:
                 return default
             # return type(default)(result)
-            return result
+            return self.convert_value(result)
         except:
             return default
 
@@ -165,18 +166,22 @@ class TangoDeviceProperties:
     def set_device_property(self, prop: str, value):
         prop_name = str(prop)
         try:
-            data = []
-            if isinstance(value, str):
-                data = [value]
-            elif isinstance(value, list) or isinstance(value, tuple):
-                for v in value:
-                    data.append(str(v))
-            else:
-                data = [str(value)]
+            data = self.convert_value(value)
             self.db.put_device_property(self.name, {prop_name: data})
             return True
         except:
             return False
+
+    def convert_value(self, value):
+        if isinstance(value, str):
+            return [value]
+        data = []
+        try:
+            for v in value:
+                data.append(str(v))
+            return data
+        except:
+            return [str(value)]
 
     def get(self, key, default=None):
         try:
