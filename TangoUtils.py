@@ -87,9 +87,10 @@ def convert_polling_status(status_string_array, name: str):
     return result
 
 
-def get_device_property(device_name, prop_name, default=None):
+def get_device_property(device_name: str, prop_name: str, default=None, db=None):
     try:
-        db = tango.Database()
+        if db is None:
+            db = tango.Database()
         pr = db.get_device_property(device_name, prop_name)[prop_name]
         result = None
         if len(pr) > 0:
@@ -104,9 +105,10 @@ def get_device_property(device_name, prop_name, default=None):
         return default
 
 
-def set_device_property(device_name, prop_name, value: str):
+def set_device_property(device_name: str, prop_name: str, value: str, db=None) -> bool:
     try:
-        db = tango.Database()
+        if db is None:
+            db = tango.Database()
         db.put_device_property(device_name, {prop_name: [value]})
         return True
     except:
