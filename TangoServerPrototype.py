@@ -53,10 +53,6 @@ class TangoServerPrototype(Device):
         self.set_state(DevState.INIT)
         # default logger
         self.logger = config_logger()
-        # self.logger = config_logger(format_string=self.get_name() + ' ' + LOG_FORMAT_STRING)
-        # device proxy for self
-        # self.device_proxy = None
-        # self.device_proxy = tango.DeviceProxy(self.get_name())
         # default configuration
         self.config = Configuration()
         # config from file
@@ -226,7 +222,10 @@ class TangoServerPrototype(Device):
     def read_config_from_file(self, file_name=None):
         if file_name is None:
             file_name = self.__class__.__name__ + '.json'
-        self.config = Configuration(file_name)
+        if not hasattr(self, 'config'):
+            self.config = Configuration(file_name)
+        else:
+            self.config.read(file_name)
 
     def configure_tango_logging(self):
         # add logging to TLS
