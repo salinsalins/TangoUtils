@@ -55,7 +55,7 @@ class TangoServerPrototype(Device):
         self.logger = config_logger()
         # self.logger = config_logger(format_string=self.get_name() + ' ' + LOG_FORMAT_STRING)
         # device proxy for self
-        self.device_proxy = None
+        # self.device_proxy = None
         # self.device_proxy = tango.DeviceProxy(self.get_name())
         # default configuration
         self.config = Configuration()
@@ -219,7 +219,8 @@ class TangoServerPrototype(Device):
 
     def write_config_to_properties(self):
         for p in self.config:
-            self.set_device_property(p, self.config[p])
+            if p not in self.properties:
+                self.properties[p] = self.config[p]
         # self.device_proxy.put_property(self.config.data)
 
     def read_config_from_file(self, file_name=None):
