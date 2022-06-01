@@ -119,7 +119,7 @@ class ComPort:
             ComPort._ports[self.port].open_counter -= 1
             if ComPort._ports[self.port].open_counter <= 0:
                 result = ComPort._ports[self.port].device.close()
-                ComPort._ports.pop(self.port)
+                # ComPort._ports.pop(self.port)
                 self.logger.debug('COM port closed %s', result)
                 return result
             else:
