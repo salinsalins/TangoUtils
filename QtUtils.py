@@ -93,7 +93,7 @@ def save_settings(obj, file_name='config.json', widgets=()):
         s = obj.size()
         obj.config['main_window'] = {'size': (s.width(), s.height()), 'position': (p.x(), p.y())}
         #
-        obj.config['log_level'] = obj.logger.getLevel()
+        obj.config['log_level'] = obj.logger.level
         # get state of widgets
         for w in widgets:
             get_widget_state(w, obj.config)
