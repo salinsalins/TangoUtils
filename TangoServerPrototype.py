@@ -12,7 +12,7 @@ from tango import AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
 
 from Configuration import Configuration
-from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties
+from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties, TangoServerAttributeProperties
 from config_logger import config_logger
 from log_exception import log_exception
 
@@ -28,7 +28,7 @@ class TangoServerPrototype(Device):
     server_name = APPLICATION_NAME_SHORT
     device_list = []
 
-    # ******** attributes ***********
+   # ******** attributes ***********
     version = attribute(label="version", dtype=str,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
