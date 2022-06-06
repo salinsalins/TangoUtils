@@ -6,6 +6,7 @@ A. L. Sanin, started 05.07.2021
 """
 
 import logging
+import time
 
 import tango
 from tango import AttrWriteType, DispLevel, DevState
@@ -24,18 +25,18 @@ APPLICATION_VERSION = '2.0'
 
 class TangoServerPrototype(Device):
     # ******** class variables ***********
-    server_version = APPLICATION_VERSION
-    server_name = APPLICATION_NAME_SHORT
+    server_version_value = APPLICATION_VERSION
+    server_name_value = APPLICATION_NAME_SHORT
     device_list = []
 
    # ******** attributes ***********
-    version = attribute(label="version", dtype=str,
+    server_version = attribute(label="server_version", dtype=str,
                         display_level=DispLevel.OPERATOR,
                         access=AttrWriteType.READ,
                         unit="", format="%s",
                         doc="Server version")
 
-    name = attribute(label="name", dtype=str,
+    server_name = attribute(label="server_name", dtype=str,
                      display_level=DispLevel.OPERATOR,
                      access=AttrWriteType.READ,
                      unit="", format="%s",
@@ -58,7 +59,7 @@ class TangoServerPrototype(Device):
         # config from file
         self.read_config_from_file()
         # config from properties
-        self.properties = TangoDeviceProperties()
+        self.properties = TangoDeviceProperties(self.get_name())
         self.read_config_from_properties()
         # set config
         self.set_config()
@@ -77,11 +78,11 @@ class TangoServerPrototype(Device):
         self.write_config_to_properties()
 
     # ******** attribute r/w procedures ***********
-    def read_version(self):
-        return self.server_version
+    def read_server_version(self):
+        return self.server_version_value
 
-    def read_name(self):
-        return self.server_name
+    def read_server_name(self):
+        return self.server_name_value
 
     def read_log_level(self):
         return logging.getLevelName(self.logger.getEffectiveLevel())
@@ -255,22 +256,18 @@ class TangoServerPrototype(Device):
         self.set_state(DevState.FAULT)
         self.set_status(msg)
 
-    # def __getattr__(self, name):
-    #     if name in self.config:
-    #         return self.config(name)
-    #     super().__getttr__(name)
+
+def looping():
+    print('Empty loop. Overwrite or disable.')
+    time.sleep(1.0)
+    pass
 
 
-# def looping():
-#     print('Empty loop. Overwrite or disable.')
-#     time.sleep(1.0)
-#     pass
-#
-#
-# def post_init_callback():
-#     print('Empty post_init_callback. Overwrite or disable.')
-#     pass
-#
-#
-# if __name__ == "__main__":
-#     TangoServerPrototype.run_server(post_init_callback=post_init_callback, event_loop=looping)
+def post_init_callback():
+    print('Empty post_init_callback. Overwrite or disable.')
+    pass
+
+
+if __name__ == "__main__":
+    # TangoServerPrototype.run_server(post_init_callback=post_init_callback, event_loop=looping)
+    TangoServerPrototype.run_server()

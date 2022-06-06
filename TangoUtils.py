@@ -125,7 +125,7 @@ class TangoDeviceProperties:
         elif isinstance(device_name, str):
             self.name = device_name
         else:
-            raise ValueError('Parameter device should be string or tango.server.Device')
+            raise ValueError('Parameter device_name should be string or tango.server.Device')
         self.db = tango.Database()
         names = self.db.get_device_property_list(self.name, '*').value_string
         self.data = {nm: self.get_device_property(nm) for nm in names}
@@ -221,7 +221,6 @@ class TangoDeviceProperties:
 class TangoServerAttribute(attribute):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.properties = TangoServerAttributeProperties()
 
 
 class TangoServerAttributeProperties:
@@ -245,7 +244,7 @@ class TangoServerAttributeProperties:
             raise ValueError('Parameter attribute_name should be string or tango.server.attribute')
         self.db = tango.Database()
         apr = self.db.get_device_attribute_property(self.device_name, self.name)
-        self.data = apr[self.name]
+        self.data = {k: str(v) for (k, v) in apr[self.name]}
 
     def __getitem__(self, key):
         if key not in self.data:
