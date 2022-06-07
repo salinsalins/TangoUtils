@@ -116,6 +116,75 @@ def set_device_property(device_name: str, prop_name: str, value: str, db=None) -
         return False
 
 
+def split_tango_name(name):
+    """
+    Full object naming schema is
+
+    [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
+
+    The protocol, host, port, attribute, property and dbase fields are optional. The meaning of these fields are:
+
+    protocol: Specifies which protocol is used(Tango or Taco).Tango is the default
+
+    dbase: The supported value for xx is yes and no.
+    This field is used to specify that the device is a device served
+     by a device server started with or without database usage. The default value is dbase=yes
+
+    host: port: This field has different meaning according to the dbase value.
+    If dbase = yes(the default),
+        the host is the host where the control system database server is running and port is the
+        database server port. It has a higher priority than the value
+        defined by the TANGO_HOST environment variable.
+    If dbase = no,
+        host is the host name where the device server process
+        serving the device is running and port is the device server process port.
+
+    attribute: The attribute name
+
+    property: The property name
+
+    The host: port and dbase = xx fields are necessary only when
+    creating the DeviceProxy object used to remotely access the device.
+    The -> characters are used to specify a property name.
+    """
+    na = str(name).split('//')
+    if len(na) > 2 or len(na) <= 0:
+        raise ValueError(f'Incorrect Tango name {name}')
+    if len(na) == 2:
+        protocol = na[0].strip()
+        na = na[1]
+    else:
+        protocol = ''
+        na = na[0]
+    n = na.find('dbase=')
+    if n > 0:
+        dbase = na[n:n+8]
+        na = na[:n]
+    else:
+        dbase = ''
+    na = na.split('/')
+    n = na[0].find(':')
+    if n > 0:
+        host = na[0][:n]
+        port = na[0][n+1:]
+        na = na[1:]
+    else:
+        host = ''
+        port = ''
+    n = na[-1].find('->')
+    if n > 0:
+        attribute = na[-1][:n].strip()
+        property = na[-1][n+2:].strip()
+        na = na[:-1]
+    else:
+        attribute = ''
+        property = ''
+    if len(na) != 3:
+        raise ValueError(f'Incorrect Tango name {name}')
+    device = na[0] + '/' + na[1] + '/' + na[2]
+    return protocol, host, port, device, attribute, property, dbase
+
+
 class TangoDeviceProperties:
     def __init__(self, device_name=None, sync=False):
         if device_name is None:
@@ -205,17 +274,12 @@ class TangoDeviceProperties:
         return v
 
 
-class TangoServerAttribute(attribute):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-
-class TangoServerAttributeProperties:
+class TangoDeviceAttributeProperties:
     def __init__(self, device_name=None, attribute_name=None):
         if device_name is None:
             device_name = inspect.stack()[2].frame.f_locals['self'].get_name()
         if isinstance(device_name, tango.server.Device):
-            self.name = device_name.get_name()
+            self.device_name = device_name.get_name()
         if isinstance(device_name, str):
             self.device_name = device_name
         else:
@@ -224,60 +288,78 @@ class TangoServerAttributeProperties:
         if attribute_name is None:
             attribute_name = inspect.stack()[1].frame.f_locals['self'].name
         if isinstance(attribute_name, attribute):
-            self.name = attribute_name.name
+            self.attribute_name = attribute_name.name
         elif isinstance(attribute_name, str):
-            self.name = attribute_name
+            self.attribute_name = attribute_name
         else:
             raise ValueError('Parameter attribute_name should be string or tango.server.attribute')
         self.db = tango.Database()
-        apr = self.db.get_device_attribute_property(self.device_name, self.name)
-        self.data = {k: str(v) for (k, v) in apr[self.name]}
+        # apr = self.db.get_device_attribute_property(self.device_name, self.name)
+        # self.data = {k: str(v) for (k, v) in apr[self.name]}
 
     def __getitem__(self, key):
-        if key not in self.data:
-            self.data[key] = self.get_device_property(key)
-        return self.data[key]
+        v = self.get_property(key)
+        if len(v) <= 0:
+            raise KeyError(f'Attribute {self.attribute_name} does not nave property {key}')
+        return v
 
     def __setitem__(self, key, value):
-        self.data[str(key)] = self.convert_value(value)
-        self.set_device_property(str(key), value)
+        self.set_property(key, value)
         return
 
     def __contains__(self, key):
-        return key in self.data
+        v = self.get_property(key)
+        return len(v) > 0
 
     def __delitem__(self, key):
-        if key in self.data:
-            self.data.pop(key)
-            self.delete_device_property(key)
+        self.delete_property(key)
 
     def __iter__(self):
-        return iter(self.data)
+        result = self.db.get_device_attribute_property(self.device_name, {self.attribute_name: []})
+        return iter(result[self.attribute_name])
 
     def __reversed__(self):
-        return reversed(self.data)
+        result = self.db.get_device_attribute_property(self.device_name, {self.attribute_name: []})
+        return reversed(result[self.attribute_name])
 
     def __len__(self):
-        return len(self.data)
+        result = self.db.get_device_attribute_property(self.device_name, {self.attribute_name: []})
+        return len(result[self.attribute_name])
 
     def __call__(self):
-        return self.data
+        result = self.db.get_device_attribute_property(self.device_name, {self.attribute_name: []})
+        data = {k: self.convert_value(v) for (k, v) in result[self.attribute_name].items()}
+        return data
+
+    def get(self, key, default=None):
+        v = self.get_property(key)
+        if len(v) <= 0:
+            v = default
+        return v
+
+    def pop(self, key, default=None):
+        v = self.get(key, default)
+        self.delete_property(key)
+        return v
 
     def get_property(self, property_name: str):
-        result = self.db.get_device_attribute_property(self.device_name, self.name)
-        return self.convert_value(result[self.name][property_name])
+        result = self.db.get_device_attribute_property(self.device_name, self.attribute_name)[self.attribute_name]
+        try:
+            return self.convert_value(result[property_name])
+        except:
+            return []
+
+    def set_property(self, prop: str, value):
+        data = {str(prop): self.convert_value(value)}
+        try:
+            self.db.put_device_attribute_property(self.device_name, {self.attribute_name: data})
+            return True
+        except:
+            return False
 
     def delete_property(self, prop: str):
         try:
-            self.db.delete_device_property(self.name, prop)
-        except:
-            pass
-
-    def set_property(self, prop: str, value):
-        prop_name = str(prop)
-        try:
-            data = self.convert_value(value)
-            self.db.put_device_property(self.name, {prop_name: data})
+            self.db.delete_device_attribute_property(self.device_name, {self.attribute_name: [str(prop)]})
             return True
         except:
             return False
@@ -285,31 +367,15 @@ class TangoServerAttributeProperties:
     def convert_value(self, value):
         if isinstance(value, str):
             return [value]
-        data = []
         try:
-            for v in value:
-                data.append(str(v))
-            return data
+            return [str(v) for v in value]
         except:
             return [str(value)]
 
-    def get(self, key, default=None):
-        try:
-            result = self.data.get(key, default)
-            if default is not None and result is not None:
-                result = type(default)(result)
-        except:
-            result = default
-        self.__setitem__(key, result)
-        return result
 
-    def pop(self, key, default=None):
-        try:
-            result = self.data.pop(key, default)
-            if default is not None and result is not None:
-                result = type(default)(result)
-        except:
-            result = default
-        return result
+class TangoServerAttribute(attribute):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.properties = TangoDeviceAttributeProperties()
 
-tango._tango.StdStringVector
+

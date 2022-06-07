@@ -13,7 +13,7 @@ from tango import AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
 
 from Configuration import Configuration
-from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties, TangoServerAttributeProperties
+from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties, TangoDeviceAttributeProperties
 from config_logger import config_logger
 from log_exception import log_exception
 
