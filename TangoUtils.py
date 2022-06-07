@@ -158,7 +158,9 @@ class TangoDeviceProperties:
         return len(names)
 
     def __call__(self):
-        return self.data
+        names = self.db.get_device_property_list(self.name, '*').value_string
+        data = {nm: self.get_device_property(nm) for nm in names}
+        return data
 
     def get_device_property(self, prop: str) -> list:
         # exception free and decompose v[prop] from result from db
