@@ -146,13 +146,16 @@ class TangoDeviceProperties:
         self.delete_device_property(key)
 
     def __iter__(self):
-        return iter(self.data)
+        names = self.db.get_device_property_list(self.name, '*').value_string
+        return iter(names)
 
     def __reversed__(self):
-        return reversed(self.data)
+        names = self.db.get_device_property_list(self.name, '*').value_string
+        return reversed(names)
 
     def __len__(self):
-        return len(self.data)
+        names = self.db.get_device_property_list(self.name, '*').value_string
+        return len(names)
 
     def __call__(self):
         return self.data
