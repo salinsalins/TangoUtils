@@ -276,8 +276,8 @@ class TangoDeviceProperties:
 
 class TangoDeviceAttributeProperties:
     def __init__(self, device_name=None, attribute_name=None):
-        if device_name is None:
-            device_name = inspect.stack()[2].frame.f_locals['self'].get_name()
+        # if device_name is None:
+        #     device_name = inspect.stack()[2].frame.f_locals['self'].get_name()
         if isinstance(device_name, tango.server.Device):
             self.device_name = device_name.get_name()
         if isinstance(device_name, str):
@@ -285,8 +285,8 @@ class TangoDeviceAttributeProperties:
         else:
             raise ValueError('Parameter device_name should be string or tango.server.Device')
 
-        if attribute_name is None:
-            attribute_name = inspect.stack()[1].frame.f_locals['self'].name
+        # if attribute_name is None:
+        #     attribute_name = inspect.stack()[1].frame.f_locals['self'].name
         if isinstance(attribute_name, attribute):
             self.attribute_name = attribute_name.name
         elif isinstance(attribute_name, str):
@@ -373,9 +373,9 @@ class TangoDeviceAttributeProperties:
             return [str(value)]
 
 
-class TangoServerAttribute(attribute):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.properties = TangoDeviceAttributeProperties()
+# class TangoServerAttribute(attribute):
+#     def __init__(self, *args, **kwargs):
+#         super().__init__(*args, **kwargs)
+#         self.properties = TangoDeviceAttributeProperties(self., self.name)
 
 
