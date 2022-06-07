@@ -118,7 +118,6 @@ def set_device_property(device_name: str, prop_name: str, value: str, db=None) -
 
 class TangoDeviceProperties:
     def __init__(self, device_name=None, sync=False):
-        self.sync = sync
         if device_name is None:
             device_name = inspect.stack()[1].frame.f_locals['self'].get_name()
         if isinstance(device_name, tango.server.Device):
@@ -128,32 +127,23 @@ class TangoDeviceProperties:
         else:
             raise ValueError('Parameter device_name should be string or tango.server.Device')
         self.db = tango.Database()
-        names = self.db.get_device_property_list(self.name, '*').value_string
-        self.data = {k: list(v) for (k, v) in self.db.get_device_property(self.name, list(names)).items()}
 
     def __getitem__(self, key):
-        if not self.sync and key in self.data:
-            return self.data[key]
         v = self.get_device_property(key)
         if len(v) <= 0:
-            if key in self.data:
-                del self.data[key]
             raise KeyError(f'Device {self.name} does not nave property {key}')
-        self.data[key] = list(v)
         return v
 
     def __setitem__(self, key, value):
-        self.data[str(key)] = self.convert_value(value)
-        self.set_device_property(str(key), value)
+        self.set_device_property(key, value)
         return
 
     def __contains__(self, key):
-        return key in self.data
+        v = self.get_device_property(key)
+        return len(v) > 0
 
     def __delitem__(self, key):
-        if key in self.data:
-            self.data.pop(key)
-            self.delete_device_property(key)
+        self.delete_device_property(key)
 
     def __iter__(self):
         return iter(self.data)
@@ -199,20 +189,15 @@ class TangoDeviceProperties:
             return [str(value)]
 
     def get(self, key, default=None):
-        key = str(key)
-        if not self.sync and key in self.data:
-            return self.data[key]
         v = self.get_device_property(key)
         if len(v) <= 0:
             v = default
-        if v is not None:
-            self.data[key] = v
         return v
 
     def pop(self, key, default=None):
-        key = str(key)
+        v = self.get(key, default)
         self.delete_device_property(key)
-        return self.data.pop(key, default)
+        return v
 
 
 class TangoServerAttribute(attribute):
