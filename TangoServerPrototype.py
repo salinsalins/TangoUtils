@@ -265,12 +265,12 @@ class TangoServerPrototype(Device):
 
 
 def looping():
-    # for dev in TangoServerPrototype.device_list:
-    #     if not hasattr(dev.server_name, 'properties'):
-    #         print('add')
-    #         dev.server_name.properties = TangoDeviceAttributeProperties(dev.get_name(), 'server_name')
-    #     else:
-    #         print(dev.server_name.properties)
+    for dev in TangoServerPrototype.device_list:
+        if not hasattr(dev.server_name, 'properties'):
+            print('add')
+            dev.server_name.properties = TangoDeviceAttributeProperties(dev.get_name(), 'server_name')
+        else:
+            print(dev.server_name.properties)
     print('Empty loop. Overwrite or disable.')
     time.sleep(1.0)
     pass
@@ -284,5 +284,5 @@ def post_init_callback():
 if __name__ == "__main__":
     # TangoServerPrototype.run_server(post_init_callback=post_init_callback)
     # TangoServerPrototype.run_server(post_init_callback=post_init_callback, event_loop=looping)
-    # TangoServerPrototype.run_server(event_loop=looping)
-    TangoServerPrototype.run_server()
+    TangoServerPrototype.run_server(event_loop=looping)
+    # TangoServerPrototype.run_server()
