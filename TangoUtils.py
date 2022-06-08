@@ -299,6 +299,7 @@ class TangoDeviceAttributeProperties:
         self.db = tango.Database()
 
     def initialize(self):
+        print('initialize')
         if self.device_name is None:
             self.device_name = inspect.stack()[2].frame.f_locals['self'].get_name()
         if self.attribute_name is None:
@@ -388,8 +389,16 @@ class TangoDeviceAttributeProperties:
 
 
 class TangoServerAttribute(attribute):
+    # def __new__(cls, *args, **kwargs):
+    #     inst = attribute.__new__(cls)
+    #     print('3', inst)
+    #     inst.properties = TangoDeviceAttributeProperties()
+    #     return inst
+    #
     def __init__(self, *args, **kwargs):
+        # print('1')
         super().__init__(*args, **kwargs)
-        self.properties = TangoDeviceAttributeProperties()
+        # print('2', self)
+        # self.properties = TangoDeviceAttributeProperties()
 
 
