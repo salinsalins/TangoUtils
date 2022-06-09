@@ -13,8 +13,7 @@ from tango import AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
 
 from Configuration import Configuration
-from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties, TangoDeviceAttributeProperties, \
-    TangoServerAttribute
+from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties
 from config_logger import config_logger
 from log_exception import log_exception
 
@@ -55,8 +54,6 @@ class TangoServerPrototype(Device):
         self.set_state(DevState.INIT)
         # default logger
         self.logger = config_logger()
-        # self.debug('%s', self.server_name)
-        # self.server_name.properties = TangoDeviceAttributeProperties()
         # default configuration
         self.config = Configuration()
         # config from file
@@ -75,7 +72,7 @@ class TangoServerPrototype(Device):
                         logging.getLevelName(self.logger.getEffectiveLevel()))
         self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
         self.set_state(DevState.RUNNING)
-        TangoServerPrototype.device_list.append(self)
+        self.device_list.append(self)
         return True
 
     def delete_device(self):
@@ -86,9 +83,6 @@ class TangoServerPrototype(Device):
         return self.server_version_value
 
     def read_server_name(self):
-        # self.debug('server_name properties %s', self.server_name.properties())
-        # self.debug('server_name properties %s', self.server_name)
-        # self.debug('server_name properties %s', hasattr(self.server_name, 'properties'))
         return self.server_name_value
 
     def read_log_level(self):
@@ -265,12 +259,8 @@ class TangoServerPrototype(Device):
 
 
 def looping():
-    # for dev in TangoServerPrototype.device_list:
-    #     if not hasattr(dev.server_name, 'properties'):
-    #         print('add')
-    #         dev.server_name.properties = TangoDeviceAttributeProperties(dev.get_name(), 'server_name')
-    #     else:
-    #         print(dev.server_name.properties)
+    for dev in TangoServerPrototype.device_list:
+        pass
     print('Empty loop. Overwrite or disable.')
     time.sleep(1.0)
     pass
@@ -278,7 +268,6 @@ def looping():
 
 def post_init_callback():
     print('Empty post_init_callback. Overwrite or disable.')
-    pass
 
 
 if __name__ == "__main__":
