@@ -373,14 +373,6 @@ class TangoDeviceAttributeProperties:
 
 
 class TangoServerAttribute(tango.Attribute):
-    # def __new__(cls, *args, **kwargs):
-    #     inst = attribute.__new__(cls)
-    #     print('3', inst)
-    #     inst.properties = TangoDeviceAttributeProperties()
-    #     return inst
-    #
-    properties = TangoDeviceAttributeProperties()
-
     def __init__(self, *args, **kwargs):
         # print('1')
         attribute.__init__(self, *args, **kwargs)
