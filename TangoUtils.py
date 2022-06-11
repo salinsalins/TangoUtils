@@ -197,6 +197,24 @@ class TangoName:
         self.property = v[5]
         self.dbase = v[6]
 
+    def __str__(self):
+        v = ''
+        if self.protocol:
+            v += self.protocol + '//'
+        if self.host and self.port:
+            v += self.host + ':' + self.port + '/'
+        elif self.host:
+            v += self.host + '/'
+        if self.device:
+            v += self.device
+        if self.attribute:
+            v +=  '/' + self.attribute
+        if self.property:
+            v +=  '->' + self.property
+        if self.dbase:
+            v +=  ' dbase=' + self.dbase
+        return v
+
 
 class TangoDeviceProperties:
     def __init__(self, device_name=None):
