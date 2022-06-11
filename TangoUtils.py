@@ -116,79 +116,10 @@ def set_device_property(device_name: str, prop_name: str, value: str, db=None) -
         return False
 
 
-def split_tango_name(name):
-    """
-    Full object naming schema is
-
-    [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
-
-    The protocol, host, port, attribute, property and dbase fields are optional. The meaning of these fields are:
-
-    protocol: Specifies which protocol is used(Tango or Taco).Tango is the default
-
-    dbase: The supported value for xx is yes and no.
-    This field is used to specify that the device is a device served
-     by a device server started with or without database usage. The default value is dbase=yes
-
-    host: port: This field has different meaning according to the dbase value.
-    If dbase = yes(the default),
-        the host is the host where the control system database server is running and port is the
-        database server port. It has a higher priority than the value
-        defined by the TANGO_HOST environment variable.
-    If dbase = no,
-        host is the host name where the device server process
-        serving the device is running and port is the device server process port.
-
-    attribute: The attribute name
-
-    property: The property name
-
-    The host: port and dbase = xx fields are necessary only when
-    creating the DeviceProxy object used to remotely access the device.
-    The -> characters are used to specify a property name.
-    """
-    na = str(name).split('//')
-    if len(na) > 2 or len(na) <= 0:
-        raise ValueError(f'Incorrect Tango name {name}')
-    if len(na) == 2:
-        protocol = na[0].strip()
-        na = na[1]
-    else:
-        protocol = ''
-        na = na[0]
-    n = na.find('dbase=')
-    if n > 0:
-        dbase = na[n:n+8]
-        na = na[:n]
-    else:
-        dbase = ''
-    na = na.split('/')
-    n = na[0].find(':')
-    if n > 0:
-        host = na[0][:n]
-        port = na[0][n+1:]
-        na = na[1:]
-    else:
-        host = ''
-        port = ''
-    n = na[-1].find('->')
-    if n > 0:
-        attribute = na[-1][:n].strip()
-        property = na[-1][n+2:].strip()
-        na = na[:-1]
-    else:
-        attribute = ''
-        property = ''
-    if len(na) != 3:
-        raise ValueError(f'Incorrect Tango name {name}')
-    device = na[0] + '/' + na[1] + '/' + na[2]
-    return protocol, host, port, device, attribute, property, dbase
-
-
 class TangoName:
     # [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
     def __init__(self, name: str):
-        v = split_tango_name(name)
+        v = self.from_str()
         self.protocol = v[0]
         self.host = v[1]
         self.port = v[2]
@@ -208,12 +139,81 @@ class TangoName:
         if self.device:
             v += self.device
         if self.attribute:
-            v +=  '/' + self.attribute
+            v += '/' + self.attribute
         if self.property:
-            v +=  '->' + self.property
+            v += '->' + self.property
         if self.dbase:
-            v +=  ' dbase=' + self.dbase
+            v += ' dbase=' + self.dbase
         return v
+
+    @staticmethod
+    def from_str(name):
+        """
+        Full object naming schema is
+
+        [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
+
+        The protocol, host, port, attribute, property and dbase fields are optional. The meaning of these fields are:
+
+        protocol: Specifies which protocol is used(Tango or Taco).Tango is the default
+
+        dbase: The supported value for xx is yes and no.
+        This field is used to specify that the device is a device served
+         by a device server started with or without database usage. The default value is dbase=yes
+
+        host: port: This field has different meaning according to the dbase value.
+        If dbase = yes(the default),
+            the host is the host where the control system database server is running and port is the
+            database server port. It has a higher priority than the value
+            defined by the TANGO_HOST environment variable.
+        If dbase = no,
+            host is the host name where the device server process
+            serving the device is running and port is the device server process port.
+
+        attribute: The attribute name
+
+        property: The property name
+
+        The host: port and dbase = xx fields are necessary only when
+        creating the DeviceProxy object used to remotely access the device.
+        The -> characters are used to specify a property name.
+        """
+        na = str(name).split('//')
+        if len(na) > 2 or len(na) <= 0:
+            raise ValueError(f'Incorrect Tango name {name}')
+        if len(na) == 2:
+            protocol = na[0].strip()
+            na = na[1]
+        else:
+            protocol = ''
+            na = na[0]
+        n = na.find('dbase=')
+        if n > 0:
+            dbase = na[n:n + 8]
+            na = na[:n]
+        else:
+            dbase = ''
+        na = na.split('/')
+        n = na[0].find(':')
+        if n > 0:
+            host = na[0][:n]
+            port = na[0][n + 1:]
+            na = na[1:]
+        else:
+            host = ''
+            port = ''
+        n = na[-1].find('->')
+        if n > 0:
+            attribute = na[-1][:n].strip()
+            property = na[-1][n + 2:].strip()
+            na = na[:-1]
+        else:
+            attribute = ''
+            property = ''
+        if len(na) != 3:
+            raise ValueError(f'Incorrect Tango name {name}')
+        device = na[0] + '/' + na[1] + '/' + na[2]
+        return protocol, host, port, device, attribute, property, dbase
 
 
 class TangoDeviceProperties:
@@ -402,12 +402,9 @@ class TangoDeviceAttributeProperties:
         except:
             return [str(value)]
 
-
 # class TangoServerAttribute(tango.Attribute):
 #     def __init__(self, *args, **kwargs):
 #         # print('1')
 #         attribute.__init__(self, *args, **kwargs)
 #         # print('2', self)
 #         # self.properties = TangoDeviceAttributeProperties()
-
-
