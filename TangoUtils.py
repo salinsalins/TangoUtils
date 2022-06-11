@@ -119,7 +119,7 @@ def set_device_property(device_name: str, prop_name: str, value: str, db=None) -
 class TangoName:
     # [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
     def __init__(self, name: str):
-        v = self.from_str()
+        v = self.from_str(name)
         self.protocol = v[0]
         self.host = v[1]
         self.port = v[2]
