@@ -185,8 +185,21 @@ def split_tango_name(name):
     return protocol, host, port, device, attribute, property, dbase
 
 
+class TangoName:
+    # [protocol: //][host: port /]device_name[ / attribute][->property][  # dbase=xx]
+    def __init__(self, name: str):
+        v = split_tango_name(name)
+        self.protocol = v[0]
+        self.host = v[1]
+        self.port = v[2]
+        self.device = v[3]
+        self.attribute = v[4]
+        self.property = v[5]
+        self.dbase = v[6]
+
+
 class TangoDeviceProperties:
-    def __init__(self, device_name=None, sync=False):
+    def __init__(self, device_name=None):
         if device_name is None:
             device_name = inspect.stack()[1].frame.f_locals['self'].get_name()
         if isinstance(device_name, tango.server.Device):
@@ -372,11 +385,11 @@ class TangoDeviceAttributeProperties:
             return [str(value)]
 
 
-class TangoServerAttribute(tango.Attribute):
-    def __init__(self, *args, **kwargs):
-        # print('1')
-        attribute.__init__(self, *args, **kwargs)
-        # print('2', self)
-        # self.properties = TangoDeviceAttributeProperties()
+# class TangoServerAttribute(tango.Attribute):
+#     def __init__(self, *args, **kwargs):
+#         # print('1')
+#         attribute.__init__(self, *args, **kwargs)
+#         # print('2', self)
+#         # self.properties = TangoDeviceAttributeProperties()
 
 
