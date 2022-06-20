@@ -14,19 +14,25 @@ class MoxaTCPComPort:
             self.host = host
             self._port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.socket.connect((self.host, self.port))
-        self.socket.create_connection((self.host, self._port), 5.0)  # 5 s timeout
-        self.socket.settimeout(0.0)
+        self.socket.connect((self.host, self._port))
+        # socket.create_connection((self.host, self._port), 5.0)  # 5 s timeout
+        self.socket.settimeout(0.01)
 
     def close(self):
         self.socket.close()
         return True
 
     def write(self, cmd):
-        return self.socket.send(cmd)
+        try:
+            return self.socket.send(cmd)
+        except:
+            return -1
 
     def read(self, n=1):
-        return self.socket.recv(n)
+        try:
+            return self.socket.recv(n)
+        except:
+            return b''
 
     def isOpen(self):
         return True
