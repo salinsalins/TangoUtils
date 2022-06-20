@@ -29,7 +29,7 @@ class ComPort:
         port = port.strip()
         if port.upper().startswith('COM'):
             port = port.upper()
-        # use existed device
+        # use existing device
         with ComPort._lock:
             if port in ComPort._ports:
                 if not ComPort._ports[port].ready:

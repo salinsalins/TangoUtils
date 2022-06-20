@@ -7,15 +7,15 @@ class MoxaTCPComPort:
             n = host.find(':')
             self.host = host[:n].strip()
             try:
-                self.port = int(host[n + 1:].strip())
+                self._port = int(host[n + 1:].strip())
             except:
-                self.port = port
+                self._port = port
         else:
             self.host = host
-            self.port = port
+            self._port = port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #self.socket.connect((self.host, self.port))
-        self.socket.create_connection((self.host, self.port), 5.0) # 5 s timeout
+        # self.socket.connect((self.host, self.port))
+        self.socket.create_connection((self.host, self._port), 5.0)  # 5 s timeout
         self.socket.settimeout(0.0)
 
     def close(self):
@@ -40,6 +40,3 @@ class MoxaTCPComPort:
     @property
     def in_waiting(self):
         return 1
-
-
-
