@@ -73,6 +73,7 @@ class ComPort:
                     self.kwargs['write_timeout'] = 0.0
                     self.device = serial.Serial(self.port, *self.args, **self.kwargs)
                 else:
+                    self.kwargs['logger'] = self.logger
                     self.device = MoxaTCPComPort(self.port, *self.args, **self.kwargs)
             except:
                 log_exception(self)
