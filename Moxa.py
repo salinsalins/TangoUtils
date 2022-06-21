@@ -13,9 +13,9 @@ class MoxaTCPComPort:
         else:
             self.host = host
             self._port = port
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.host, self._port))
-        # socket.create_connection((self.host, self._port), 5.0)  # 5 s timeout
+        # self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        # self.socket.connect((self.host, self._port))
+        self.socket = socket.create_connection((self.host, self._port), 5.0)  # 5 s timeout
         self.socket.settimeout(0.01)
 
     def close(self):
