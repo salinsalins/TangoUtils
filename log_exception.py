@@ -5,7 +5,10 @@ import sys
 
 def exception_short_info():
     ex_type, ex_value, traceback = sys.exc_info()
-    return ' %s: %s' % (ex_type.__name__, ex_value)
+    if ex_type:
+        return ' %s: %s' % (ex_type.__name__, ex_value)
+    else:
+        return ''
 
 
 def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
