@@ -8,7 +8,7 @@ def exception_short_info():
     if ex_type:
         return ' %s: %s' % (ex_type.__name__, ex_value)
     else:
-        return ''
+        return 'Unknown exception'
 
 
 def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
