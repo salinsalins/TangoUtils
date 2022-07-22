@@ -14,7 +14,7 @@ def exception_short_info():
 def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
     tail = exception_short_info()
     if message is None:
-        message = 'Exception'
+        message = 'Exception: '
     message += tail
     try:
         message = message % args
