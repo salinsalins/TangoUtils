@@ -306,6 +306,12 @@ class TangoDeviceProperties:
 
 
 class TangoDeviceAttributeProperties:
+    #   dict like interface for Tango device attribute properties
+    #   properties = TangoDeviceAttributeProperties(device_name, attribute_name)
+    #   property_value = properties[property_name]
+    #       property_value is a list['str'] or [] if property_name is absent
+    #       to get single value it is necessary to add [0] : a =  properties['b'][0]
+    #   properties[property_name] = new_property_value
     def __init__(self, device_name=None, attribute_name=None):
         if isinstance(device_name, tango.server.Device):
             self.device_name = device_name.get_name()
@@ -321,16 +327,16 @@ class TangoDeviceAttributeProperties:
             raise ValueError('Parameter attribute_name should be string or tango.server.attribute')
         self.db = tango.Database()
 
-    def initialize(self):
-        if self.device_name is None:
-            self.device_name = inspect.stack()[2].frame.f_locals['self'].get_name()
-        if self.attribute_name is None:
-            self.attribute_name = inspect.stack()[1].frame.f_locals['self'].name
+    # def initialize(self):
+    #     if self.device_name is None:
+    #         self.device_name = inspect.stack()[2].frame.f_locals['self'].get_name()
+    #     if self.attribute_name is None:
+    #         self.attribute_name = inspect.stack()[1].frame.f_locals['self'].name
 
     def __getitem__(self, key):
         v = self.get_property(key)
         if len(v) <= 0:
-            raise KeyError(f'Attribute {self.attribute_name} does not nave property {key}')
+            raise KeyError(f'Attribute {self.attribute_name} does not have property {key}')
         return v
 
     def __setitem__(self, key, value):
