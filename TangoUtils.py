@@ -263,9 +263,9 @@ class TangoDeviceProperties:
         return data
 
     def get_device_property(self, prop: str) -> list:
-        # exception free and decompose v[prop] from result from db
-        prop = str(prop)
+        # exception free and decompose v[prop] from db results
         try:
+            prop = str(prop)
             result = self.db.get_device_property(self.name, prop)[prop]
             return list(result)
         except:
