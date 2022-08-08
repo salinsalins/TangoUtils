@@ -29,18 +29,18 @@ class TangoServerPrototype(Device):
     server_name_value = APPLICATION_NAME_SHORT
     device_list = []
 
-   # ******** attributes ***********
+    # ******** attributes ***********
     server_version = attribute(label="server_version", dtype=str,
-                        display_level=DispLevel.OPERATOR,
-                        access=AttrWriteType.READ,
-                        unit="", format="%s",
-                        doc="Server version")
+                               display_level=DispLevel.OPERATOR,
+                               access=AttrWriteType.READ,
+                               unit="", format="%s",
+                               doc="Server version")
 
     server_name = attribute(label="server_name", dtype=str,
-                     display_level=DispLevel.OPERATOR,
-                     access=AttrWriteType.READ,
-                     unit="", format="%s",
-                     doc="Server name")
+                            display_level=DispLevel.OPERATOR,
+                            access=AttrWriteType.READ,
+                            unit="", format="%s",
+                            doc="Server name")
 
     log_level = attribute(label="log_level", dtype=str,
                           display_level=DispLevel.EXPERT,
@@ -69,7 +69,7 @@ class TangoServerPrototype(Device):
         level = self.config.get('log_level', logging.DEBUG)
         self.logger.setLevel(level)
         self.logger.debug('Log level has been set to %s',
-                        logging.getLevelName(self.logger.getEffectiveLevel()))
+                          logging.getLevelName(self.logger.getEffectiveLevel()))
         self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
         self.set_state(DevState.RUNNING)
         self.device_list.append(self)
@@ -103,7 +103,7 @@ class TangoServerPrototype(Device):
             tango.DeviceProxy(dserver.get_name()).command_inout('SetLoggingLevel', [[level], [self.get_name()]])
             self.set_running()
         except:
-            self.set_fault()
+            self.set_fault('Can not set Log level to %s' % value)
             self.log_exception('Can not set Log level to %s', value)
 
     def set_tango_log_level(self, level=None):
@@ -115,6 +115,7 @@ class TangoServerPrototype(Device):
             level = TANGO_LOG_LEVELS[self.read_log_level()]
         elif isinstance(level, str):
             level = TANGO_LOG_LEVELS[level.upper()]
+        # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
         self.dserver_proxy.command_inout('SetLoggingLevel', [[level], [self.get_name()]])
 
     # ******** commands ***********
