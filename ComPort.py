@@ -38,7 +38,7 @@ class ComPort:
                 ComPort._ports[port].logger.debug('Using existing COM port')
                 ComPort._ports[port].open_counter += 1
                 if not ComPort._ports[port].ready:
-                    ComPort._ports[port].logger.warning('Existing COM port not ready')
+                    ComPort._ports[port].logger.error('Existing COM port is not ready')
                 return
         self.lock = RLock()
         self.logger = kwargs.pop('logger', config_logger())
@@ -140,7 +140,7 @@ class ComPort:
                 except:
                     return False
             else:
-                return True
+                return False
 
 
 class EmptyComPort():
