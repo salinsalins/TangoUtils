@@ -96,7 +96,7 @@ class TangoServerPrototype(Device):
                 v = value.upper()
             self.logger.setLevel(v)
             # configure tango logging
-            util = tango.Util.instance(self)
+            util = tango.Util.instance()
             dserver = util.get_dserver_device()
             # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
             level = TANGO_LOG_LEVELS[self.read_log_level()]
