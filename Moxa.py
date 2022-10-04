@@ -43,6 +43,9 @@ class MoxaTCPComPort:
         return True
 
     def reset_input_buffer(self):
+        b = self.read()
+        if len(b) > 0:
+            self.logger.info(f"Input buffer is not empty: {b}")
         return True
 
     def reset_output_buffer(self):
