@@ -32,14 +32,15 @@ class ComPort:
         # use existing device
         with ComPort._lock:
             if port in ComPort._ports:
+                ComPort._ports[port].logger.debug(f'Using existing COM port {port}')
                 if not ComPort._ports[port].ready:
                     ComPort._ports[port].device.close()
                     ComPort._ports[port].open()
-                ComPort._ports[port].logger.debug('Using existing COM port')
                 ComPort._ports[port].open_counter += 1
                 if not ComPort._ports[port].ready:
                     ComPort._ports[port].logger.error('Existing COM port is not ready')
                 return
+        # create new port
         self.lock = RLock()
         self.logger = kwargs.pop('logger', config_logger())
         self.emulated = kwargs.pop('emulated', None)
@@ -53,7 +54,9 @@ class ComPort:
         self.open()
         with ComPort._lock:
             ComPort._ports[self.port] = self
-        self.logger.debug('Port %s has been initialized', self.port)
+        self.logger.debug(f'{self.port} has been initialized')
+        if not ComPort._ports[self.port].ready:
+            ComPort._ports[port].logger.warning(f'{self.port} is not ready')
 
     def open(self):
         with self.lock:
@@ -76,15 +79,19 @@ class ComPort:
                     self.kwargs['logger'] = self.logger
                     self.device = MoxaTCPComPort(self.port, *self.args, **self.kwargs)
             except:
-                log_exception(self)
+                log_exception(self.logger)
                 self.device = EmptyComPort()
 
     def read(self, *args, **kwargs):
-        with ComPort._ports[self.port].lock:
-            if ComPort._ports[self.port].ready:
-                return ComPort._ports[self.port].device.read(*args, **kwargs)
-            else:
-                return b''
+        try:
+            with ComPort._ports[self.port].lock:
+                if ComPort._ports[self.port].ready:
+                    return ComPort._ports[self.port].device.read(*args, **kwargs)
+                else:
+                    return b''
+        except:
+            log_exception(self.logger)
+            self.device = EmptyComPort()
 
     def write(self, *args, **kwargs):
         with ComPort._ports[self.port].lock:
