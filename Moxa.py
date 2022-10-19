@@ -5,10 +5,15 @@ from log_exception import log_exception
 
 
 class MoxaTCPComPort:
+    DEFAULT_PORT = 4001
     DEFAULT_TIMEOUT = 0.01
     CREATE_TIMEOUT = 5.0
 
-    def __init__(self, host: str, port: int = 4001, **kwargs):
+    def __init__(self, host: str, port: int = None, **kwargs):
+        self.kwargs = kwargs
+        self.logger = kwargs.get('logger', config_logger())
+        if port is None:
+            port = MoxaTCPComPort.DEFAULT_PORT
         if ':' in host:
             n = host.find(':')
             self.host = host[:n].strip()
@@ -21,7 +26,6 @@ class MoxaTCPComPort:
             self.port = int(port)
         # self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # self.socket.connect((self.host, self._port))
-        self.logger = kwargs.pop('logger', config_logger())
         create_timeout = kwargs.get('create_timeout', MoxaTCPComPort.CREATE_TIMEOUT)
         self.socket = socket.create_connection((self.host, self.port), create_timeout)
         timeout = kwargs.get('timeout', MoxaTCPComPort.DEFAULT_TIMEOUT)
