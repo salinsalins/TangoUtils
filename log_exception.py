@@ -32,7 +32,8 @@ def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
         if not isinstance(logger, logging.Logger):
             return message
         if 'stacklevel' not in kwargs:
-            kwargs['stacklevel'] = 2
+            if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+                kwargs['stacklevel'] = 2
         logger.log(level, message, **kwargs)
         logger.debug('Exception: ', exc_info=True)
         return message
