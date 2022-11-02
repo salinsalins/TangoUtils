@@ -11,11 +11,11 @@ def exception_short_info():
         return 'Unknown exception'
 
 
-def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
+def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwargs):
     info1 = 'Exception Info can not be determined'
     try:
         info1 = exception_short_info()
-        if isinstance(logger, str):
+        if logger is None or isinstance(logger, str):
             # raise ValueError('Incorrect argument for logger')
             # caller = sys._getframe(1).f_code.co_name
             if message is not None:
