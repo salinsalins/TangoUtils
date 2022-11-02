@@ -12,17 +12,15 @@ def exception_short_info():
 
 
 def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
-    tail = exception_short_info()
-    if message is None:
-        message = 'Exception: '
-    message += tail
+    info1 = 'Exception Info can not be determined'
     try:
-        message = message % args
+        info1 = exception_short_info()
         if isinstance(logger, str):
             # raise ValueError('Incorrect argument for logger')
             # caller = sys._getframe(1).f_code.co_name
             if message is not None:
-                message = logger % ([message] + args)
+                args = tuple([message] + list(args))
+            message = logger
             logger = inspect.stack()[1].frame.f_locals['self'].logger
         if not isinstance(logger, logging.Logger):
             if hasattr(logger, 'logger'):
@@ -31,13 +29,20 @@ def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
                 logger = logger.LOGGER
         if not isinstance(logger, logging.Logger):
             return message
+
+        if message is None:
+            message = 'Exception: '
+        message += info1
+        message = message % args
+
         if 'stacklevel' not in kwargs:
-            kwargs['stacklevel'] = 2
+            if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+                kwargs['stacklevel'] = 2
         logger.log(level, message, **kwargs)
         logger.debug('Exception: ', exc_info=True)
         return message
     except:
-        tail = exception_short_info()
-        print('Unexpected exception in log_exception ', tail)
-        print('Previous exception:', message)
+        info2 = exception_short_info()
+        print('Unexpected exception in log_exception:', info2)
+        print('Previous exception:', info1)
         return message
