@@ -19,7 +19,7 @@ def log_exception(logger, message=None, *args, level=logging.ERROR, **kwargs):
             # raise ValueError('Incorrect argument for logger')
             # caller = sys._getframe(1).f_code.co_name
             if message is not None:
-                args = tuple([message] + args)
+                args = tuple([message] + list(args))
             message = logger
             logger = inspect.stack()[1].frame.f_locals['self'].logger
         if not isinstance(logger, logging.Logger):
