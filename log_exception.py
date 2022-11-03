@@ -39,7 +39,7 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
                 kwargs['stacklevel'] = 2
         logger.log(level, message, **kwargs)
-        logger.debug('Exception: ', exc_info=True)
+        logger.debug('Exception Info: ', exc_info=True)
         return message
     except:
         info2 = exception_short_info()
