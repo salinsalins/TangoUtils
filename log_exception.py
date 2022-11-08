@@ -28,6 +28,7 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             elif hasattr(logger, 'LOGGER'):
                 logger = logger.LOGGER
         if not isinstance(logger, logging.Logger):
+            print('Logger can not be determined')
             return message
 
         if message is None:
