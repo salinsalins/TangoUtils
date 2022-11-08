@@ -1,6 +1,9 @@
 import inspect
 import logging
 
+from future.moves import sys
+from tango import DevFailed
+
 import config_logger
 import tango
 from tango.server import Device, attribute
@@ -421,9 +424,17 @@ class TangoDeviceAttributeProperties:
         except:
             return [str(value)]
 
+
 # class TangoServerAttribute(tango.Attribute):
 #     def __init__(self, *args, **kwargs):
 #         # print('1')
 #         attribute.__init__(self, *args, **kwargs)
 #         # print('2', self)
 #         # self.properties = TangoDeviceAttributeProperties()
+
+def tango_exception_reason():
+    ex_type, ex_value, traceback = sys.exc_info()
+    if ex_type == DevFailed:
+        return ex_value.args[0].reason
+    else:
+        return 'Not DevFailed Exception'
