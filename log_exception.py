@@ -6,7 +6,7 @@ import sys
 def exception_short_info():
     ex_type, ex_value, traceback = sys.exc_info()
     if ex_type:
-        return ' %s: %s' % (ex_type.__name__, ex_value.args[-1].desc)
+        return ' %s %s' % (ex_type.__name__, ex_value.args[-1].desc)
     else:
         return 'Unknown exception'
 
