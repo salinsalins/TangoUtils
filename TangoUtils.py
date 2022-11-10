@@ -182,21 +182,25 @@ class TangoName:
         The -> characters are used to specify a property name.
         """
         na = str(name).split('//')
-        if len(na) > 2 or len(na) <= 0:
-            raise ValueError(f'Incorrect Tango name {name}')
+        # split protocol
         if len(na) == 2:
             protocol = na[0].strip()
             na = na[1]
-        else:
+        elif len(na) == 1:
             protocol = ''
             na = na[0]
+        else:
+            raise ValueError(f'Incorrect Tango name {name}')
+        # split dbase
         n = na.find('dbase=')
         if n > 0:
-            dbase = na[n:n + 8]
+            dbase = na[n:n+8]
             na = na[:n]
         else:
             dbase = ''
+        # split others
         na = na.split('/')
+        # split host:port
         n = na[0].find(':')
         if n > 0:
             host = na[0][:n]
@@ -205,6 +209,7 @@ class TangoName:
         else:
             host = ''
             port = ''
+        # split property name and attribute name
         n = na[-1].find('->')
         if n > 0:
             attribute = na[-1][:n].strip()
