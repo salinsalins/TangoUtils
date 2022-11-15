@@ -123,13 +123,16 @@ class TextEditHandler(logging.Handler):
 
 
 class WidgetLogHandler(logging.Handler):
-    def __init__(self, widget=None):
+    def __init__(self, widget, limit=-1):
         if not hasattr(widget, 'setText'):
             raise ValueError('Incompatible widget for Log Handler')
         logging.Handler.__init__(self)
         self.widget = widget
+        self.limit = limit
 
     def emit(self, record):
         log_entry = self.format(record)
+        if self.limin > 0:
+            log_entry = log_entry[:self.limit]
         if self.widget is not None:
             self.widget.setText(log_entry)
