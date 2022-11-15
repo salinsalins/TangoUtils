@@ -111,6 +111,8 @@ def save_settings(obj, file_name='config.json', widgets=()):
 # Logging to the text panel
 class TextEditHandler(logging.Handler):
     def __init__(self, widget=None):
+        if not hasattr(widget, 'appendPlainText'):
+            raise ValueError('Incompatible widget for Log Handler')
         logging.Handler.__init__(self)
         self.widget = widget
 
@@ -118,3 +120,16 @@ class TextEditHandler(logging.Handler):
         log_entry = self.format(record)
         if self.widget is not None:
             self.widget.appendPlainText(log_entry)
+
+
+class WidgetLogHandler(logging.Handler):
+    def __init__(self, widget=None):
+        if not hasattr(widget, 'setText'):
+            raise ValueError('Incompatible widget for Log Handler')
+        logging.Handler.__init__(self)
+        self.widget = widget
+
+    def emit(self, record):
+        log_entry = self.format(record)
+        if self.widget is not None:
+            self.widget.setText(log_entry)
