@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, QPoint
@@ -129,10 +130,12 @@ class WidgetLogHandler(logging.Handler):
         logging.Handler.__init__(self)
         self.widget = widget
         self.limit = limit
+        self.widget.time = 0.0
 
     def emit(self, record):
         log_entry = self.format(record)
-        if self.limin > 0:
+        if self.limit > 0:
             log_entry = log_entry[:self.limit]
         if self.widget is not None:
+            self.widget.time = time.time()
             self.widget.setText(log_entry)
