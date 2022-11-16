@@ -132,7 +132,7 @@ class WidgetLogHandler(logging.Handler):
 
     def emit(self, record):
         log_entry = self.format(record)
-        if self.limin > 0:
+        if self.limit > 0:
             log_entry = log_entry[:self.limit]
         if self.widget is not None:
             self.widget.setText(log_entry)
