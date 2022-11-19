@@ -132,7 +132,7 @@ class WidgetLogHandler(logging.Handler):
         self.limit = limit
         self.widget.time = time.time()
         if formatter is not None:
-            pass
+            self.setFormatter(formatter)
 
     def emit(self, record):
         log_entry = self.format(record)
