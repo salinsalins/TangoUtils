@@ -1,5 +1,6 @@
 import json
 import logging
+import time
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, QPoint
@@ -123,12 +124,15 @@ class TextEditHandler(logging.Handler):
 
 
 class WidgetLogHandler(logging.Handler):
-    def __init__(self, widget, limit=-1):
+    def __init__(self, widget, limit=-1, formatter=None):
         if not hasattr(widget, 'setText'):
             raise ValueError('Incompatible widget for Log Handler')
         logging.Handler.__init__(self)
         self.widget = widget
         self.limit = limit
+        self.widget.time = time.time()
+        if formatter is not None:
+            pass
 
     def emit(self, record):
         log_entry = self.format(record)
@@ -136,3 +140,4 @@ class WidgetLogHandler(logging.Handler):
             log_entry = log_entry[:self.limit]
         if self.widget is not None:
             self.widget.setText(log_entry)
+            self.widget.time = time.time() + 10.0
