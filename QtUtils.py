@@ -124,19 +124,20 @@ class TextEditHandler(logging.Handler):
 
 
 class WidgetLogHandler(logging.Handler):
-    def __init__(self, widget, limit=-1, timeout=float('inf')):
+    def __init__(self, widget, limit=-1, formatter=None):
         if not hasattr(widget, 'setText'):
             raise ValueError('Incompatible widget for Log Handler')
         logging.Handler.__init__(self)
         self.widget = widget
         self.limit = limit
-        self.widget.time = 0.0
-        self.timeout = timeout
+        self.widget.time = time.time()
+        if formatter is not None:
+            self.setFormatter(formatter)
 
     def emit(self, record):
         log_entry = self.format(record)
         if self.limit > 0:
             log_entry = log_entry[:self.limit]
         if self.widget is not None:
-            self.widget.time = time.time() + self.timeout
             self.widget.setText(log_entry)
+            self.widget.time = time.time() + 10.0
