@@ -3,7 +3,7 @@ import logging
 import time
 
 from PyQt5 import QtWidgets
-from PyQt5.QtCore import QSize, QPoint
+from PyQt5.QtCore import QSize, QPoint, QTimer
 from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox, QWidget
 
 from log_exception import log_exception
@@ -17,7 +17,7 @@ def get_widget_state(widget: QWidget, config: dict, widget_name=None):
             config[widget_name] = str(widget.text())
         elif isinstance(widget, QComboBox):
             config[widget_name] = {'items': [str(widget.itemText(k)) for k in range(widget.count())],
-                            'index': widget.currentIndex()}
+                                   'index': widget.currentIndex()}
         elif isinstance(widget, QtWidgets.QAbstractButton):
             config[widget_name] = widget.isChecked()
         elif isinstance(widget, QPlainTextEdit) or isinstance(widget, QtWidgets.QTextEdit):
@@ -124,21 +124,31 @@ class TextEditHandler(logging.Handler):
 
 
 class WidgetLogHandler(logging.Handler):
-    def __init__(self, widget, limit=-1, formatter=None, tileout=10.0):
+    def __init__(self, widget, limit=-1, formatter=None, timeout=10.0):
         if not hasattr(widget, 'setText'):
             raise ValueError('Incompatible widget for Log Handler')
         logging.Handler.__init__(self)
         self.widget = widget
         self.limit = limit
         self.widget.time = time.time()
-        self.timeout =  tileout
+        self.timeout = timeout
+        # defile and start timer task
+        self.timer = QTimer()
+        self.timer.setSingleShot(True)
+        self.timer.timeout.connect(self.timer_handler)
         if formatter is not None:
             self.setFormatter(formatter)
 
     def emit(self, record):
+        self.timer.stop()
         log_entry = self.format(record)
         if self.limit > 0:
             log_entry = log_entry[:self.limit]
         if self.widget is not None:
             self.widget.setText(log_entry)
             self.widget.time = time.time() + self.timeout
+            if self.timeout > 0.0:
+                self.timer.start(self.timeout * 1000)
+
+    def timer_handler(self):
+        self.widget.setText('')
