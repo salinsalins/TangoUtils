@@ -24,6 +24,11 @@ def get_widget_state(widget: QWidget, config: dict, widget_name=None):
             config[widget_name] = str(widget.toPlainText())
         elif isinstance(widget, QtWidgets.QSpinBox) or isinstance(widget, QtWidgets.QDoubleSpinBox):
             config[widget_name] = widget.value()
+        # elif isinstance(widget, QtWidgets.QFrame):
+        #     c1 = {}
+        #     config[widget_name] = c1
+        #     for w1 in widget.children():
+        #         get_widget_state(w1, c1)
     except:
         return
 
