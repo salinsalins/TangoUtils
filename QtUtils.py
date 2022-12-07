@@ -4,9 +4,14 @@ import time
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, QPoint, QTimer
-from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox, QWidget
+from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox, QWidget, QTableWidget
 
 from log_exception import log_exception
+
+
+def scroll_table_widget(widget: QTableWidget, row, column=0):
+    index = widget.model().index(row, column)
+    widget.scrollTo(index)
 
 
 def get_widget_state(widget: QWidget, config: dict, widget_name=None):
