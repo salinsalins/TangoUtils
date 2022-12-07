@@ -9,7 +9,21 @@ from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox, QWidget, QTabl
 from log_exception import log_exception
 
 
-def scroll_table_widget(widget: QTableWidget, row, column=0):
+def get_table_selected_row(widget: QTableWidget):
+    rng = widget.selectedRanges()
+    # if selection is empty
+    if len(rng) < 1:
+        return -1
+    # top row of the selection
+    row = rng[0].topRow()
+    return row
+
+
+def scroll_table_widget(widget: QTableWidget, row=None, column=0):
+    if row is None:
+        row = get_table_selected_row(widget)
+        if row < 0:
+            row = 0
     index = widget.model().index(row, column)
     widget.scrollTo(index)
 
