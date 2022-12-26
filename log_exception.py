@@ -53,10 +53,10 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         return message
 
 
-def log(message=None, *args, logger=None, level=logging.DEBUG, **kwargs):
+def log(message=None, *args, logger=None, level=logging.DEBUG, stacklevel=1, **kwargs):
     try:
         if logger is None:
-            self = inspect.stack()[1].frame.f_locals['self']
+            self = inspect.stack()[stacklevel].frame.f_locals['self']
             if hasattr(self, 'logger'):
                 logger = self.logger
             elif hasattr(self, 'LOGGER'):
@@ -66,8 +66,28 @@ def log(message=None, *args, logger=None, level=logging.DEBUG, **kwargs):
             return
         # raise ValueError('Incorrect argument for logger')
         # caller = sys._getframe(1).f_code.co_name
-        logger.log(level, message % args, **kwargs)
+        if len(args) > 0 and args[0] is not None:
+            msg = message % args
+        else:
+            msg = message
+        logger.log(level, msg, **kwargs)
     except:
         info2 = exception_short_info()
         print('Unexpected exception ', info2)
         print('Debug message ', str(message))
+
+
+def debug(message=None, *args, logger=None, **kwargs):
+    log(message, *args, logger, level=logging.DEBUG, stacklevel=2, **kwargs)
+
+
+def info(message=None, *args, logger=None, **kwargs):
+    log(message, *args, logger, level=logging.INFO, stacklevel=2, **kwargs)
+
+
+def warning(message=None, *args, logger=None, **kwargs):
+    log(message, *args, logger, level=logging.WARNING, stacklevel=2, **kwargs)
+
+
+def error(message=None, *args, logger=None, **kwargs):
+    log(message, *args, logger, level=logging.ERROR, stacklevel=2, **kwargs)
