@@ -72,7 +72,7 @@ def log(message=None, *args, logger=None, level=logging.DEBUG, stacklevel=1, **k
     except:
         info2 = exception_short_info()
         print('Unexpected exception: ', info2)
-        print('Debug message: ', str(msg))
+        print('Log message: ', str(msg))
 
 
 def debug(message=None, *args, logger=None, **kwargs):
