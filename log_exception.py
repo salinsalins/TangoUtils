@@ -54,7 +54,12 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
 
 
 def log(message=None, *args, logger=None, level=logging.DEBUG, stacklevel=1, **kwargs):
+    msg = 'Message can not be determined'
     try:
+        if len(args) > 0 and args[0] is not None:
+            msg = message % args
+        else:
+            msg = message
         if logger is None:
             self = inspect.stack()[stacklevel].frame.f_locals['self']
             if hasattr(self, 'logger'):
@@ -62,19 +67,12 @@ def log(message=None, *args, logger=None, level=logging.DEBUG, stacklevel=1, **k
             elif hasattr(self, 'LOGGER'):
                 logger = self.LOGGER
         if not isinstance(logger, logging.Logger):
-            print('Logger can not be determined')
-            return
-        # raise ValueError('Incorrect argument for logger')
-        # caller = sys._getframe(1).f_code.co_name
-        if len(args) > 0 and args[0] is not None:
-            msg = message % args
-        else:
-            msg = message
+            raise ValueError('Logger can not be determined')
         logger.log(level, msg, **kwargs)
     except:
         info2 = exception_short_info()
-        print('Unexpected exception ', info2)
-        print('Debug message ', str(message))
+        print('Unexpected exception: ', info2)
+        print('Debug message: ', str(msg))
 
 
 def debug(message=None, *args, logger=None, **kwargs):
