@@ -51,3 +51,41 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         print('Unexpected exception in log_exception:', info2)
         print('Previous exception:', info1)
         return message
+
+
+def log(message=None, *args, logger=None, level=logging.DEBUG, stacklevel=1, **kwargs):
+    msg = 'Message can not be determined'
+    try:
+        if len(args) > 0 and args[0] is not None:
+            msg = message % args
+        else:
+            msg = message
+        if logger is None:
+            self = inspect.stack()[stacklevel].frame.f_locals['self']
+            if hasattr(self, 'logger'):
+                logger = self.logger
+            elif hasattr(self, 'LOGGER'):
+                logger = self.LOGGER
+        if not isinstance(logger, logging.Logger):
+            raise ValueError('Logger can not be determined')
+        logger.log(level, msg, **kwargs)
+    except:
+        info2 = exception_short_info()
+        print('Unexpected exception: ', info2)
+        print('Log message: ', str(msg))
+
+
+def debug(message=None, *args, logger=None, **kwargs):
+    log(message, *args, logger, level=logging.DEBUG, stacklevel=2, **kwargs)
+
+
+def info(message=None, *args, logger=None, **kwargs):
+    log(message, *args, logger, level=logging.INFO, stacklevel=2, **kwargs)
+
+
+def warning(message=None, *args, logger=None, **kwargs):
+    log(message, *args, logger, level=logging.WARNING, stacklevel=2, **kwargs)
+
+
+def error(message=None, *args, logger=None, **kwargs):
+    log(message, *args, logger, level=logging.ERROR, stacklevel=2, **kwargs)

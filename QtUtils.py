@@ -4,9 +4,28 @@ import time
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import QSize, QPoint, QTimer
-from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox, QWidget
+from PyQt5.QtWidgets import QPlainTextEdit, QLineEdit, QComboBox, QWidget, QTableWidget
 
 from log_exception import log_exception
+
+
+def get_table_selected_row(widget: QTableWidget):
+    rng = widget.selectedRanges()
+    # if selection is empty
+    if len(rng) < 1:
+        return -1
+    # top row of the selection
+    row = rng[0].topRow()
+    return row
+
+
+def scroll_table_widget(widget: QTableWidget, row=None, column=0):
+    if row is None:
+        row = get_table_selected_row(widget)
+        if row < 0:
+            row = 0
+    index = widget.model().index(row, column)
+    widget.scrollTo(index)
 
 
 def get_widget_state(widget: QWidget, config: dict, widget_name=None):
@@ -24,6 +43,11 @@ def get_widget_state(widget: QWidget, config: dict, widget_name=None):
             config[widget_name] = str(widget.toPlainText())
         elif isinstance(widget, QtWidgets.QSpinBox) or isinstance(widget, QtWidgets.QDoubleSpinBox):
             config[widget_name] = widget.value()
+        # elif isinstance(widget, QtWidgets.QFrame):
+        #     c1 = {}
+        #     config[widget_name] = c1
+        #     for w1 in widget.children():
+        #         get_widget_state(w1, c1)
     except:
         return
 
