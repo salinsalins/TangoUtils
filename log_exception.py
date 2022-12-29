@@ -1,6 +1,7 @@
 import inspect
 import logging
 import sys
+import traceback
 
 
 def exception_short_info():
@@ -17,6 +18,7 @@ def exception_short_info():
 
 def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwargs):
     info1 = 'Exception Info can not be determined'
+    ex_type, ex_value, tb = sys.exc_info()
     try:
         info1 = exception_short_info()
         if logger is None or isinstance(logger, str):
@@ -38,8 +40,10 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         if message is None:
             message = 'Exception: '
         message += info1
-        message = message % args
-
+        try:
+            message = message % args
+        except:
+            message = message + str(args)
         if 'stacklevel' not in kwargs:
             if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
                 kwargs['stacklevel'] = 2
@@ -48,8 +52,13 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         return message
     except:
         info2 = exception_short_info()
+        ex_type2, ex_value2, tb2 = sys.exc_info()
         print('Unexpected exception in log_exception:', info2)
         print('Previous exception:', info1)
+        print('*********************')
+        traceback.print_tb(tb)
+        print('=====================')
+        traceback.print_tb(tb2)
         return message
 
 
