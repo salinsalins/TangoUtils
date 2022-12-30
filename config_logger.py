@@ -14,20 +14,23 @@ def config_logger(name=None, level: int = logging.DEBUG, format_string=None):
             return config_logger.logger
         else:
             name = __name__
-    logger = logging.getLogger(name)
+    try:
+        logger = inspect.stack()[1].frame.f_locals['self'].logger
+    except:
+        logger = logging.getLogger(name)
+        logger.propagate = False
+        logger.setLevel(level)
     config_logger.logger = logger
-    logger.propagate = False
-    logger.setLevel(level)
     # do not add extra console handlers if logger already has one. Add any later if needed.
     if logger.hasHandlers() and format_string is None:
         return logger
     if format_string is None:
         format_string = LOG_FORMAT_STRING
     log_formatter = logging.Formatter(format_string, datefmt='%H:%M:%S')
+    config_logger.log_formatter = log_formatter
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(log_formatter)
     logger.addHandler(console_handler)
     config_logger.console_handler = console_handler
-    config_logger.log_formatter = log_formatter
     return logger
 
