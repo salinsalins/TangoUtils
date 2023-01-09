@@ -284,7 +284,7 @@ class TangoDeviceProperties:
         return self.__call__()
 
     def get_device_property(self, prop: str) -> list:
-        # exception free and decompose v[prop] from db results
+        # exception free and decompose db results to list
         try:
             prop = str(prop)
             result = self.db.get_device_property(self.device_name, prop)[prop]
@@ -442,4 +442,5 @@ def tango_exception_reason():
     if ex_type == DevFailed:
         return ex_value.args[0].reason
     else:
-        return 'Not DevFailed Exception'
+        # Not DevFailed Exception
+        return ''
