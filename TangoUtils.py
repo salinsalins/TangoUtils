@@ -325,6 +325,9 @@ class TangoDeviceProperties:
         self.delete_device_property(key)
         return v
 
+    def to_dict(self):
+        return self.__call__()
+
 
 class TangoDeviceAttributeProperties:
     #   dict like interface for Tango device attribute properties;
