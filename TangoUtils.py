@@ -277,7 +277,7 @@ class TangoDeviceProperties:
     #     self.owner = owner
     #     self.name = name
 
-    def __get__(self, instance, owner):
+    def __get__(self, instance, owner=None):
         if instance is None:
             return self
         # self.device_name = instance.get_name()
