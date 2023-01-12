@@ -271,16 +271,8 @@ class TangoProperties:
         data = {nm: self.get_property(nm) for nm in names}
         return data
 
-    # def __set_name__(self, owner, name):
-    #     self.owner = owner
-    #     self.name = name
-
-    # def __get__(self, instance, owner=None):
-    #     if instance is None:
-    #         return self
-    #     # self.device_name = instance.get_name()
+    # def __get__(self, instance, owner):
     #     return self.__call__()
-    #
     def get_property(self, prop: str) -> list:
         raise NotImplemented
 
@@ -331,11 +323,11 @@ class TangoDeviceProperties(TangoProperties):
     def get_property_list(self):
         return self.db.get_device_property_list(self.device_name, '*').value_string
 
-    def get_property(self, prop: str) -> list:
+    def get_property(self, prop) -> list:
         # exception free and decompose db results to list
         try:
-            prop = str(prop)
-            result = self.db.get_device_property(self.device_name, prop)[prop]
+            sprop = str(prop)
+            result = self.db.get_device_property(self.device_name, sprop)[sprop]
             return list(result)
         except:
             return []
