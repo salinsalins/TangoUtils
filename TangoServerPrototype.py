@@ -244,6 +244,13 @@ class TangoServerPrototype(Device):
         self.set_state(DevState.FAULT)
         self.set_status(msg)
 
+    def set_state(self, state, msg=None):
+        if msg is None:
+            super().set_state(state)
+        else:
+            super().set_state(state)
+            self.set_status(msg)
+
 
 def looping():
     for dev in TangoServerPrototype.device_list:
