@@ -77,6 +77,8 @@ def log(message=None, *args, logger=None, level=logging.DEBUG, stacklevel=1, **k
                 logger = self.LOGGER
         if not isinstance(logger, logging.Logger):
             raise ValueError('Logger can not be determined')
+        if not (sys.version_info.major >= 3 and sys.version_info.minor >= 8):
+            kwargs.pop('stacklevel', None)
         logger.log(level, msg, **kwargs)
     except:
         info2 = exception_short_info()

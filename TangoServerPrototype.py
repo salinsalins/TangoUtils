@@ -6,6 +6,7 @@ A. L. Sanin, started 05.07.2021
 """
 
 import logging
+import sys
 import time
 
 import tango
@@ -132,20 +133,32 @@ class TangoServerPrototype(Device):
 
     def debug(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.debug(message, *args, stacklevel=2, **kwargs)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            self.logger.debug(message, *args, stacklevel=2, **kwargs)
+        else:
+            self.logger.debug(message, *args, **kwargs)
 
     def info(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.info(message, *args, stacklevel=2, **kwargs)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            self.logger.info(message, *args, stacklevel=2, **kwargs)
+        else:
+            self.logger.info(message, *args, **kwargs)
 
     def warning(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.warning(message, *args, stacklevel=2, **kwargs)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            self.logger.warning(message, *args, stacklevel=2, **kwargs)
+        else:
+            self.logger.warning(message, *args, **kwargs)
 
     def error(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         # kwargs['stacklevel'] = kwargs.copy().pop('stacklevel', 1) +1
-        self.logger.error(message, *args, stacklevel=2, **kwargs)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            self.logger.error(message, *args, stacklevel=2, **kwargs)
+        else:
+            self.logger.error(message, *args, **kwargs)
 
     def get_device_property(self, prop: str, default=None):
         try:
