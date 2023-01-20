@@ -258,10 +258,8 @@ class TangoServerPrototype(Device):
         self.set_status(msg)
 
     def set_state(self, state, msg=None):
-        if msg is None:
-            super().set_state(state)
-        else:
-            super().set_state(state)
+        super().set_state(state)
+        if msg is not None:
             self.set_status(msg)
 
 
