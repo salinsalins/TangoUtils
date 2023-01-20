@@ -124,35 +124,35 @@ class TangoServerPrototype(Device):
     def set_log_level(self, level):
         self.write_log_level(level)
         msg = '%s Log level has been set to %s' % (self.get_name(), self.read_log_level())
-        self.info(msg)
+        self.logger.info(msg)
 
     # ******** additional helper functions ***********
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         msg = '%s %s ' % (self.get_name(), message)
         log_exception(self, msg, *args, level=level, stacklevel=3, **kwargs)
 
-    def debug(self, message='', *args, **kwargs):
+    def log_debug(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
             self.logger.debug(message, *args, stacklevel=2, **kwargs)
         else:
             self.logger.debug(message, *args, **kwargs)
 
-    def info(self, message='', *args, **kwargs):
+    def log_info(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
             self.logger.info(message, *args, stacklevel=2, **kwargs)
         else:
             self.logger.info(message, *args, **kwargs)
 
-    def warning(self, message='', *args, **kwargs):
+    def log_warning(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
             self.logger.warning(message, *args, stacklevel=2, **kwargs)
         else:
             self.logger.warning(message, *args, **kwargs)
 
-    def error(self, message='', *args, **kwargs):
+    def log_error(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         # kwargs['stacklevel'] = kwargs.copy().pop('stacklevel', 1) +1
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
