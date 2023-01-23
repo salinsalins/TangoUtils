@@ -93,6 +93,8 @@ class TangoServerPrototype(Device):
         try:
             try:
                 v = int(value)
+            except KeyboardInterrupt:
+                raise
             except:
                 v = value.upper()
             self.logger.setLevel(v)
@@ -103,6 +105,8 @@ class TangoServerPrototype(Device):
             level = TANGO_LOG_LEVELS[self.read_log_level()]
             tango.DeviceProxy(dserver.get_name()).command_inout('SetLoggingLevel', [[level], [self.get_name()]])
             self.set_running()
+        except KeyboardInterrupt:
+            raise
         except:
             self.set_fault('Can not set Log level to %s' % value)
             self.log_exception('Can not set Log level to %s', value)
@@ -174,6 +178,8 @@ class TangoServerPrototype(Device):
                 return default
             else:
                 return type(default)(result)
+        except KeyboardInterrupt:
+            raise
         except:
             return default
 
@@ -183,6 +189,8 @@ class TangoServerPrototype(Device):
             db = tango.Database()
             # self.device_proxy.put_property({prop: value})
             db.put_device_property(self.get_name(), {prop: [value]})
+        except KeyboardInterrupt:
+                raise
         except:
             self.log_exception('Error writing property %s for %s' % (prop, self.get_name()))
 
