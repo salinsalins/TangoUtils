@@ -151,7 +151,7 @@ class MainWindow(QMainWindow):
     def read_port(self, port):
         result = b''
         r = port.read(1)
-        while len(r) > 0:
+        while r:
             result += r
             r = port.read(1)
         return result
