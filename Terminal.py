@@ -42,13 +42,14 @@ class MainWindow(QMainWindow):
         # Load the Qt UI
         uic.loadUi(UI_FILE, self)
         # Default main window parameters
-        self.resize(QSize(480, 640))                 # size
-        self.move(QPoint(50, 50))                    # position
-        self.setWindowTitle(APPLICATION_NAME)        # title
+        self.resize(QSize(480, 640))  # size
+        self.move(QPoint(50, 50))  # position
+        self.setWindowTitle(APPLICATION_NAME)  # title
         # Welcome message
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
         #
-        restore_settings(self, file_name=CONFIG_FILE, widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
+        restore_settings(self, file_name=CONFIG_FILE,
+                         widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
         v = self.lineEdit_3.text()
         ve = v.encode()
         h = ''
@@ -142,10 +143,10 @@ class MainWindow(QMainWindow):
         # stat = self.com.write(h.encode())
         # self.logger.debug('%s of %s bytes written', stat, len(h))
 
-
-    def on_quit(self) :
+    def on_quit(self):
         # Save global settings
-        save_settings(self, file_name=CONFIG_FILE, widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
+        save_settings(self, file_name=CONFIG_FILE,
+                      widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
 
     def timer_handler(self):
         try:
@@ -154,7 +155,7 @@ class MainWindow(QMainWindow):
                 return
             result = b''
             r = self.com.read(1)
-            while len(r) > 0:
+            while r:
                 result += r
                 r = self.com.read(1)
             if len(result) > 0:
@@ -172,8 +173,8 @@ class MainWindow(QMainWindow):
 
 
 def dts():
-    #return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-    return datetime.utcnow().strftime('%H:%M:%S.%f')[:-3]
+    # return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    return datetime.today().strftime('%H:%M:%S.%f')[:-3]
 
 
 if __name__ == '__main__':
