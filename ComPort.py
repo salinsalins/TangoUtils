@@ -144,16 +144,18 @@ class ComPort:
                 return True
 
     def close(self):
-        with ComPort._ports[self.port].lock:
-            ComPort._ports[self.port].open_counter -= 1
-            if ComPort._ports[self.port].open_counter <= 0:
-                result = ComPort._ports[self.port].device.close()
-                ComPort._ports.pop(self.port)
-                self.logger.debug(f'COM port {self.port} closed')
-                return result
-            else:
-                self.logger.debug(f'Skipped COM port {self.port} close request')
-                return True
+        with ComPort._lock:
+            if self.port in ComPort._ports:
+                with ComPort._ports[self.port].lock:
+                    ComPort._ports[self.port].open_counter -= 1
+                    if ComPort._ports[self.port].open_counter <= 0:
+                        result = ComPort._ports[self.port].device.close()
+                        ComPort._ports.pop(self.port)
+                        self.logger.debug(f'COM port {self.port} closed')
+                        return result
+                    else:
+                        self.logger.debug(f'Skipped COM port {self.port} close request')
+                        return True
 
     @property
     def ready(self):
