@@ -32,32 +32,32 @@ class ComPort:
         # use existing device
         with ComPort._lock:
             if port in ComPort._ports:
-                ComPort._ports[port].logger.debug(f'Using existing COM port {port}')
-                if not ComPort._ports[port].ready:
-                    ComPort._ports[port].device.close()
-                    ComPort._ports[port].device.open()
-                ComPort._ports[port].open_counter += 1
-                if not ComPort._ports[port].ready:
-                    ComPort._ports[port].logger.error(f'Existing COM port {port} is not ready')
+                p = ComPort._ports[port]
+                p.logger.debug(f'Using existing COM port {port}')
+                if not p.ready:
+                    p.device.close()
+                    p.device.open()
+                p.open_counter += 1
+                if not p.ready:
+                    p.logger.error(f'Existing COM port {port} is not ready')
                 return
-        # create new port
-        self.lock = RLock()
-        self.logger = kwargs.pop('logger', config_logger())
-        self.emulated = kwargs.pop('emulated', None)
-        self.open_counter = 0
-        self.port = port
-        self.args = args
-        self.kwargs = kwargs
-        # address for RS485 devices
-        self.current_addr = -1
-        self.device = None
-        self.create_port()
-        with ComPort._lock:
+            # create new port and add it to list
+            self.lock = RLock()
+            self.logger = kwargs.pop('logger', config_logger())
+            self.emulated = kwargs.pop('emulated', None)
+            self.open_counter = 0
+            self.port = port
+            self.args = args
+            self.kwargs = kwargs
+            # address for RS485 devices
+            self.current_addr = -1
+            self.device = None
+            self.create_port()
             ComPort._ports[self.port] = self
-            if ComPort._ports[self.port].ready:
+            if self.ready:
                 self.logger.debug(f'{self.port} has been initialized')
             else:
-                ComPort._ports[port].logger.warning(f'{self.port} is not ready')
+                self.logger.warning(f'{self.port} is not ready')
 
     def __del__(self):
         self.close()
@@ -91,11 +91,25 @@ class ComPort:
                 log_exception(self.logger)
                 self.device = EmptyComPort()
 
+    def close(self):
+        with ComPort._lock:
+            if self.port in ComPort._ports:
+                with self.lock:
+                    self.open_counter -= 1
+                    if self.open_counter <= 0:
+                        result = self.device.close()
+                        # ComPort._ports.pop(self.port)
+                        self.logger.debug(f'COM port {self.port} closed {result}')
+                        return result
+                    else:
+                        self.logger.debug(f'Skipped COM port {self.port} close request')
+                        return True
+
     def read(self, *args, **kwargs):
         try:
-            with ComPort._ports[self.port].lock:
-                if ComPort._ports[self.port].ready:
-                    return ComPort._ports[self.port].device.read(*args, **kwargs)
+            with self.lock:
+                if self.ready:
+                    return self.device.read(*args, **kwargs)
                 else:
                     return b''
         except KeyboardInterrupt:
@@ -107,9 +121,9 @@ class ComPort:
 
     def write(self, *args, **kwargs):
         try:
-            with ComPort._ports[self.port].lock:
-                if ComPort._ports[self.port].ready:
-                    return ComPort._ports[self.port].device.write(*args, **kwargs)
+            with self.lock:
+                if self.ready:
+                    return self.device.write(*args, **kwargs)
                 else:
                     return 0
         except KeyboardInterrupt:
@@ -118,10 +132,10 @@ class ComPort:
             log_exception(self.logger)
 
     def reset_input_buffer(self):
-        with ComPort._ports[self.port].lock:
-            if ComPort._ports[self.port].ready:
+        with self.lock:
+            if self.ready:
                 try:
-                    ComPort._ports[self.port].device.reset_input_buffer()
+                    self.device.reset_input_buffer()
                     return True
                 except KeyboardInterrupt:
                     raise
@@ -131,10 +145,10 @@ class ComPort:
                 return True
 
     def reset_output_buffer(self):
-        with ComPort._ports[self.port].lock:
-            if ComPort._ports[self.port].ready:
+        with self.lock:
+            if self.ready:
                 try:
-                    ComPort._ports[self.port].device.reset_output_buffer()
+                    self.device.reset_output_buffer()
                     return True
                 except KeyboardInterrupt:
                     raise
@@ -143,36 +157,22 @@ class ComPort:
             else:
                 return True
 
-    def close(self):
-        with ComPort._lock:
-            if self.port in ComPort._ports:
-                with ComPort._ports[self.port].lock:
-                    ComPort._ports[self.port].open_counter -= 1
-                    if ComPort._ports[self.port].open_counter <= 0:
-                        result = ComPort._ports[self.port].device.close()
-                        ComPort._ports.pop(self.port)
-                        self.logger.debug(f'COM port {self.port} closed')
-                        return result
-                    else:
-                        self.logger.debug(f'Skipped COM port {self.port} close request')
-                        return True
-
     @property
     def ready(self):
-        return ComPort._ports[self.port].device.isOpen()
+        return self.device.isOpen()
 
     @property
     def in_waiting(self):
-        with ComPort._ports[self.port].lock:
-            if ComPort._ports[self.port].ready:
+        with self.lock:
+            if self.ready:
                 try:
-                    return ComPort._ports[self.port].device.in_waiting
+                    return self.device.in_waiting
                 except KeyboardInterrupt:
                     raise
                 except:
-                    return False
+                    return 0
             else:
-                return False
+                return 0
 
 
 class EmptyComPort():
