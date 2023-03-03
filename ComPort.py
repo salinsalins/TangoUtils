@@ -8,10 +8,6 @@ from config_logger import config_logger
 from log_exception import log_exception
 
 
-def get_caller():
-    return inspect.stack()[1].frame.f_locals['self']
-
-
 class ComPort:
     _ports = {}
     _lock = Lock()
@@ -175,13 +171,14 @@ class ComPort:
                 return 0
 
 
-class EmptyComPort():
+class EmptyComPort:
+    """Always not ready, reads nothing, writes 0 bytes"""
     @property
     def in_waiting(self):
-        return False
+        return 0
 
     def open(self):
-        pass
+        return True
 
     def isOpen(self):
         return False
@@ -190,10 +187,10 @@ class EmptyComPort():
         return True
 
     def reset_output_buffer(self):
-        pass
+        return True
 
     def reset_input_buffer(self):
-        pass
+        return True
 
     def write(self, *args, **kwargs):
         return 0
