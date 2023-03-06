@@ -1,4 +1,5 @@
 import inspect
+import time
 
 import serial
 from threading import RLock, Lock
@@ -29,31 +30,34 @@ class ComPort:
         with ComPort._lock:
             if port in ComPort._ports:
                 p = ComPort._ports[port]
-                p.logger.debug(f'Using existing COM port {port}')
                 if not p.ready:
                     p.device.close()
                     p.device.open()
                 p.open_counter += 1
-                if not p.ready:
-                    p.logger.error(f'Existing COM port {port} is not ready')
+                if p.ready:
+                    p.logger.debug(f'Using existing port {port}')
+                else:
+                    p.logger.error(f'Existing port {port} is not ready')
                 return
-            # create new port and add it to list
-            self.lock = RLock()
+            # default init
+            self.port = port
             self.logger = kwargs.pop('logger', config_logger())
             self.emulated = kwargs.pop('emulated', None)
-            self.open_counter = 0
-            self.port = port
             self.args = args
             self.kwargs = kwargs
-            # address for RS485 devices
-            self.current_addr = -1
+            self.lock = RLock()
+            self.open_counter = 0
+            self.current_addr = -1  # address for RS485 devices
+            self.delay = 10.0
+            self.suspend = 0.0
             self.device = None
+            # create new port and add it to list
             self.create_port()
             ComPort._ports[self.port] = self
-            if self.ready:
-                self.logger.debug(f'{self.port} has been initialized')
-            else:
-                self.logger.warning(f'{self.port} is not ready')
+        if self.ready:
+            self.logger.debug(f'{self.port} has been initialized')
+        else:
+            self.logger.warning(f'{self.port} is not ready')
 
     def __del__(self):
         self.close()
@@ -68,7 +72,7 @@ class ComPort:
                         self.logger.error('Emulated port class not defined for %s', self.port)
                     else:
                         self.device = self.emulated(self.port, *self.args, **self.kwargs)
-                elif (self.port.upper().startswith('COM')
+                elif (self.port.startswith('COM')
                       or self.port.startswith('tty')
                       or self.port.startswith('/dev')
                       or self.port.startswith('cua')):
@@ -81,10 +85,14 @@ class ComPort:
                 if not self.device.isOpen():
                     self.device.open()
                 self.open_counter = 1
+                if self.device.isOpen():
+                    self.suspend = 0.0
+                else:
+                    self.suspend = time.time() + self.delay
             except KeyboardInterrupt:
                 raise
             except:
-                log_exception(self.logger)
+                log_exception(self.logger, 'Error creating port. Using EmptyComPort.')
                 self.device = EmptyComPort()
 
     def close(self):
@@ -95,10 +103,10 @@ class ComPort:
                     if self.open_counter <= 0:
                         result = self.device.close()
                         # ComPort._ports.pop(self.port)
-                        self.logger.debug(f'COM port {self.port} closed {result}')
+                        self.logger.debug(f'Port {self.port} has been closed')
                         return result
                     else:
-                        self.logger.debug(f'Skipped COM port {self.port} close request')
+                        self.logger.debug(f'Skipped port {self.port} close request')
                         return True
 
     def read(self, *args, **kwargs):
@@ -155,7 +163,19 @@ class ComPort:
 
     @property
     def ready(self):
-        return self.device.isOpen()
+        with self.lock:
+            if self.device.isOpen():
+                return True
+            if time.time() - self.suspend < 0.0:
+                return False
+            self.device.close()
+            self.device.open()
+            if self.device.isOpen():
+                self.suspend = 0.0
+                return True
+            else:
+                self.suspend = time.time() + self.delay
+                return False
 
     @property
     def in_waiting(self):
