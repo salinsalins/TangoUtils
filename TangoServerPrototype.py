@@ -52,7 +52,7 @@ class TangoServerPrototype(Device):
     # ******** init_device ***********
     def init_device(self):
         Device.init_device(self)
-        self.set_state(DevState.INIT)
+        self.set_state(DevState.INIT, 'Prototype server initialization')
         # default logger
         self.logger = config_logger()
         # default configuration
@@ -72,8 +72,8 @@ class TangoServerPrototype(Device):
         self.logger.debug('Log level has been set to %s',
                           logging.getLevelName(self.logger.getEffectiveLevel()))
         self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
-        self.set_state(DevState.RUNNING)
         self.device_list.append(self)
+        self.set_state(DevState.RUNNING, 'Prototype initialization finished')
         return True
 
     def delete_device(self):
@@ -257,11 +257,11 @@ class TangoServerPrototype(Device):
         # self.start_logging() # has no effect
         # self.tango_logging = True
 
-    def set_running(self, msg='R/W OK'):
+    def set_running(self, msg='I/O OK'):
         self.set_state(DevState.RUNNING)
         self.set_status(msg)
 
-    def set_fault(self, msg='Error during R/W'):
+    def set_fault(self, msg='Error during I/O'):
         self.set_state(DevState.FAULT)
         self.set_status(msg)
 
