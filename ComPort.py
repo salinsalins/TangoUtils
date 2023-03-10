@@ -30,9 +30,9 @@ class ComPort:
         with ComPort._lock:
             if port in ComPort._ports:
                 p = ComPort._ports[port]
-                if not p.ready:
-                    p.device.close()
-                    p.device.open()
+                # if not p.ready:
+                #     p.device.close()
+                #     p.device.open()
                 p.open_counter += 1
                 if p.ready:
                     p.logger.debug(f'Using existing port {port}')
@@ -57,7 +57,7 @@ class ComPort:
         if self.ready:
             self.logger.debug(f'{self.port} has been initialized')
         else:
-            self.logger.warning(f'New port {self.port} is not ready')
+            self.logger.error(f'New port {self.port} is not ready')
 
     def __del__(self):
         self.close()
