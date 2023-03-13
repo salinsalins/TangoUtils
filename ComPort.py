@@ -43,7 +43,7 @@ class ComPort:
             self.port = port
             self.logger = kwargs.pop('logger', config_logger())
             self.emulated = kwargs.pop('emulated', None)
-            self.delay = kwargs.pop('delay', 10.0)
+            self.delay = kwargs.pop('delay', 7.0)
             self.args = args
             self.kwargs = kwargs
             self.lock = RLock()
