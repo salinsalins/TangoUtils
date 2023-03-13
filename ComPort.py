@@ -97,17 +97,20 @@ class ComPort:
 
     def close(self):
         with ComPort._lock:
-            if self.port in ComPort._ports:
-                with self.lock:
-                    self.open_counter -= 1
-                    if self.open_counter <= 0:
-                        result = self.device.close()
-                        # ComPort._ports.pop(self.port)
-                        self.logger.debug(f'Port {self.port} has been closed')
-                        return result
-                    else:
-                        self.logger.debug(f'Skipped port {self.port} close request')
-                        return True
+            try:
+                if self.port in ComPort._ports:
+                    with self.lock:
+                        self.open_counter -= 1
+                        if self.open_counter <= 0:
+                            result = self.device.close()
+                            # ComPort._ports.pop(self.port)
+                            self.logger.debug(f'Port {self.port} has been closed')
+                            return result
+                        else:
+                            self.logger.debug(f'Skipped port {self.port} close request')
+                            return True
+            except:
+                log_exception(self.logger)
 
     def read(self, *args, **kwargs):
         try:
@@ -120,6 +123,7 @@ class ComPort:
             raise
         except:
             log_exception(self.logger)
+            self.close()
 
     def write(self, *args, **kwargs):
         try:
@@ -132,6 +136,7 @@ class ComPort:
             raise
         except:
             log_exception(self.logger)
+            self.close()
 
     def reset_input_buffer(self):
         with self.lock:
@@ -179,6 +184,7 @@ class ComPort:
             raise
         except:
             log_exception(self.logger)
+            self.close()
             return False
 
     @property
