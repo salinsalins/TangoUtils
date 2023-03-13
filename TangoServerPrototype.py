@@ -51,7 +51,7 @@ class TangoServerPrototype(Device):
 
     # ******** init_device ***********
     def init_device(self):
-        Device.init_device(self)
+        super().init_device()
         self.set_state(DevState.INIT, 'Prototype server initialization')
         # default logger
         self.logger = config_logger()
@@ -77,7 +77,12 @@ class TangoServerPrototype(Device):
         return True
 
     def delete_device(self):
+        # db = tango.Database()
+        # pr = db.get_device_property(self.get_name(), 'polled_attr')
+        # for name in pr:
+        #     self.config['_' + name] = pr[name]
         self.write_config_to_properties()
+        super().delete_device()
 
     # ******** attribute r/w procedures ***********
     def read_server_version(self):

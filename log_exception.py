@@ -51,14 +51,18 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         logger.log(level, message, **kwargs)
         logger.debug('Exception Info: ', exc_info=True)
         return message
+    except KeyboardInterrupt:
+        raise
     except:
         info2 = exception_short_info()
         ex_type2, ex_value2, tb2 = sys.exc_info()
         print('Unexpected exception in log_exception:', info2)
         print('Previous exception:', info1)
         print('*********************')
+        # print(ex_type, ex_value, tb)
         traceback.print_tb(tb)
         print('=====================')
+        # print(ex_type2, ex_value2, tb2)
         traceback.print_tb(tb2)
         return message
 
