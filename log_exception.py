@@ -45,9 +45,10 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         except:
             message = message + str(args)
             message = message.replace('%', '_')
-        if 'stacklevel' not in kwargs:
-            if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-                kwargs['stacklevel'] = 2
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            kwargs['stacklevel'] = kwargs.get('stacklevel', 2)
+        else:
+            kwargs.pop('stacklevel')
         logger.log(level, message, **kwargs)
         logger.debug('Exception Info: ', exc_info=True)
         return message
