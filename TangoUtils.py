@@ -91,6 +91,32 @@ def convert_polling_status(status_string_array, name: str):
     return result
 
 
+def convert_polling_status2(status_string_array: str, name: str = ''):
+    result = {}
+    s0 = 'Polled attribute name = '
+    s1 = 'Polling period (mS) = '
+    s2 = 'Polling ring buffer depth = '
+    # s3 = 'Polled attribute type = '
+    # s4 = 'Time needed for the last attribute reading (mS) = 100'
+    # s4 = 'Data not updated since 54 mS'
+    # s6 = 'Delta between last records (in mS) = 98, 100, 101, 98'
+    ss = status_string_array.split('\n')
+    i = 0
+    while i < len(ss):
+        if ss[i].startswith(s0):
+            n = ss[i].replace(s0, '')
+            if not name or name == n:
+                result[n] = {}
+                i += 1
+                if ss[i].startswith(s1):
+                    result[n]['period'] = int(ss[i].replace(s1, ''))
+                    i += 1
+                if ss[i].startswith(s2):
+                    result[n]['buffer_depth'] = int(ss[i].replace(s2, ''))
+                    i += 1
+    return result
+
+
 def get_device_property(device_name: str, prop_name: str, default=None, db=None):
     try:
         if db is None:
