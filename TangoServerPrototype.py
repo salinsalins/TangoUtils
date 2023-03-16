@@ -6,6 +6,7 @@ A. L. Sanin, started 05.07.2021
 """
 
 import logging
+import os
 import sys
 import time
 
@@ -85,6 +86,12 @@ class TangoServerPrototype(Device):
         super().delete_device()
 
     # ******** attribute r/w procedures ***********
+    def save_polling_state(self, target_property='_polled_attr'):
+        db = tango.Database()
+        pr = db.get_device_property(self.get_name(), 'polled_attr')
+        po = {target_property: pr['polled_attr']}
+        db.put_device_property(self.get_name(), po)
+
     def read_server_version(self):
         return self.server_version_value
 
@@ -195,7 +202,7 @@ class TangoServerPrototype(Device):
             # self.device_proxy.put_property({prop: value})
             db.put_device_property(self.get_name(), {prop: [value]})
         except KeyboardInterrupt:
-                raise
+            raise
         except:
             self.log_exception('Error writing property %s for %s' % (prop, self.get_name()))
 
@@ -274,6 +281,34 @@ class TangoServerPrototype(Device):
         super().set_state(state)
         if msg is not None:
             self.set_status(msg)
+
+
+def correct_polled_attr_for_server(server_name=None):
+    d_b = tango.Database()
+    if not server_name:
+        server_name = os.path.basename(sys.argv[0]).replace('.py', '')
+        # server_name = os.path.basename(__file__).replace('.py', '')
+    pr_n = 'polled_attr'
+    dev_cl = d_b.get_device_class_list(server_name + '/' + sys.argv[1])
+    vst = dev_cl.value_string
+    i = 0
+    for st in vst:
+        if st == server_name:
+            dev_n = vst[i - 1]
+            # d_b.delete_device_property(dev_n, pr_n)
+            pr_v = d_b.get_device_property(dev_n, pr_n)[pr_n]
+            result = []
+            for j in range(len(pr_v)):
+                try:
+                    val = int(pr_v[j + 1])
+                    result.append(pr_v[j])
+                    result.append(pr_v[j + 1])
+                    j += 1
+                except:
+                    # print('Wrong syntax for', pr_v[j], dev_n)
+                    pass
+            # print('Corrected syntax for', dev_n, result)
+            d_b.put_device_property(dev_n, {pr_n: result})
 
 
 def looping():
