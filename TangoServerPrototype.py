@@ -78,10 +78,6 @@ class TangoServerPrototype(Device):
         return True
 
     def delete_device(self):
-        # db = tango.Database()
-        # pr = db.get_device_property(self.get_name(), 'polled_attr')
-        # for name in pr:
-        #     self.config['_' + name] = pr[name]
         self.write_config_to_properties()
         super().delete_device()
 
