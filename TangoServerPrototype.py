@@ -83,26 +83,62 @@ class TangoServerPrototype(Device):
 
     # ******** attribute r/w procedures ***********
     def save_polling_state(self, target_property='_polled_attr'):
-        db = tango.Database()
-        pr = db.get_device_property(self.get_name(), 'polled_attr')
+        self.config[target_property] = []
+        dev_name = self.get_name()
+        pv = self.properties.get('polled_attr', [])
         result = []
         i = 0
-        while i < len(pr):
+        while i < len(pv):
             try:
-                v = int(pr[i + 1])
-                result.append(pr[i])
-                result.append(pr[i + 1])
+                v = int(pv[i + 1])
+                result.append(pv[i])
+                result.append(pv[i + 1])
                 i += 1
+            except KeyboardInterrupt:
+                raise
             except:
                 pass
             i += 1
-        if not result:
-            po = {target_property: result}
-            db.put_device_property(self.get_name(), po)
+        if result:
+            self.properties[target_property] = result
+            # self.logger.debug(f'polled_attr {dev_name}: {pv} {result} saved ')
             return True
         else:
-            self.logger.info(f'Wrong format for polled_attr {pr}, save ignored')
-            return False
+            if pv:
+                self.logger.info(f'Wrong format for polled_attr {dev_name}: {pv}, save ignored')
+                return False
+            else:
+                del self.properties[target_property]
+                # db.delete_device_property(dev_name, target_property)
+                self.logger.debug(f'{target_property} deleted')
+
+    def get_saved_polling_period(self, attr_name, prop_name='_polled_attr'):
+        try:
+            pa = self.properties.get(prop_name)
+            i = pa.index(attr_name)
+            if i < 0:
+                return -1
+            return int(pa[i + 1])
+        except KeyboardInterrupt:
+            raise
+        except:
+            return -1
+
+    def restore_polling(self, attr_name=None):
+        try:
+            dp = tango.DeviceProxy(self.get_name())
+            for name in self.ceated_attributes:
+                if attr_name is None or attr_name == name:
+                    pp = self.get_saved_polling_period(name)
+                    if pp > 0:
+                        dp.poll_attribute(name, pp)
+                        # workaround to prevent tango feature
+                        time.sleep(self.POLLING_ENABLE_DELAY)
+                        self.logger.info(f'Polling for {self.get_name()} {name} of {pp} restored')
+        except KeyboardInterrupt:
+            raise
+        except:
+            log_exception(self.logger)
 
     def read_server_version(self):
         return self.server_version_value
@@ -316,6 +352,8 @@ def correct_polled_attr_for_server(server_name=None):
                     result.append(pr_v[j])
                     result.append(pr_v[j + 1])
                     j += 1
+                except KeyboardInterrupt:
+                    raise
                 except:
                     # print('Wrong syntax for', pr_v[j], dev_n)
                     pass
