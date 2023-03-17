@@ -85,8 +85,24 @@ class TangoServerPrototype(Device):
     def save_polling_state(self, target_property='_polled_attr'):
         db = tango.Database()
         pr = db.get_device_property(self.get_name(), 'polled_attr')
-        po = {target_property: pr['polled_attr']}
-        db.put_device_property(self.get_name(), po)
+        result = []
+        i = 0
+        while i < len(pr):
+            try:
+                v = int(pr[i + 1])
+                result.append(pr[i])
+                result.append(pr[i + 1])
+                i += 1
+            except:
+                pass
+            i += 1
+        if not result:
+            po = {target_property: result}
+            db.put_device_property(self.get_name(), po)
+            return True
+        else:
+            self.logger.info(f'Wrong format for polled_attr {pr}, save ignored')
+            return False
 
     def read_server_version(self):
         return self.server_version_value
