@@ -282,6 +282,10 @@ class TangoServerPrototype(Device):
                 self.config[p] = type(self.config[p])(props[p][0])
             else:
                 self.config[p] = props[p][0]
+        # remove tango used or unnecessary properties
+        self.config.pop('polled_attr', None)
+        self.config.pop('_polled_attr', None)
+
 
     def write_config_to_properties(self):
         for p in self.config:
