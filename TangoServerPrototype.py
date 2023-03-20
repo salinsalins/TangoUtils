@@ -286,12 +286,12 @@ class TangoServerPrototype(Device):
         self.config.pop('polled_attr', None)
         self.config.pop('_polled_attr', None)
 
-
     def write_config_to_properties(self):
-        for p in self.config:
-            if p not in self.properties:
-                self.properties[p] = self.config[p]
-        # self.device_proxy.put_property(self.config.data)
+        return
+        # for p in self.config:
+        #     if p not in self.properties:
+        #         self.properties[p] = self.config[p]
+        # # self.device_proxy.put_property(self.config.data)
 
     def read_config_from_file(self, file_name=None):
         if file_name is None:
