@@ -78,7 +78,7 @@ class TangoServerPrototype(Device):
         return True
 
     def delete_device(self):
-        self.write_config_to_properties()
+        # self.write_config_to_properties()
         super().delete_device()
 
     # ******** attribute r/w procedures ***********
