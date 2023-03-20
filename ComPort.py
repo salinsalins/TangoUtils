@@ -34,6 +34,8 @@ class ComPort:
                 #     p.device.close()
                 #     p.device.open()
                 p.open_counter += 1
+                if isinstance(self.device, EmptyComPort):
+                    self.create_port()
                 if p.ready:
                     p.logger.debug(f'Using existing port {port}')
                 else:
