@@ -42,13 +42,14 @@ class MainWindow(QMainWindow):
         # Load the Qt UI
         uic.loadUi(UI_FILE, self)
         # Default main window parameters
-        self.resize(QSize(480, 640))                 # size
-        self.move(QPoint(50, 50))                    # position
-        self.setWindowTitle(APPLICATION_NAME)        # title
+        self.resize(QSize(480, 640))  # size
+        self.move(QPoint(50, 50))  # position
+        self.setWindowTitle(APPLICATION_NAME)  # title
         # Welcome message
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
         #
-        restore_settings(self, file_name=CONFIG_FILE, widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
+        restore_settings(self, file_name=CONFIG_FILE,
+                         widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
         v = self.lineEdit_3.text()
         ve = v.encode()
         h = ''
@@ -65,6 +66,7 @@ class MainWindow(QMainWindow):
         self.lineEdit_4.editingFinished.connect(self.hex_changed)
         self.pushButton.clicked.connect(self.button_clicked)
         self.pushButton_2.clicked.connect(self.connect_port)
+        self.pushButton_3.clicked.connect(self.disconnect_port)
         # Defile callback task and start timer
         self.timer = QTimer()
         self.timer.timeout.connect(self.timer_handler)
@@ -88,6 +90,14 @@ class MainWindow(QMainWindow):
         except:
             log_exception(self.logger)
             self.plainTextEdit_2.setPlainText('Port %s connection error' % self.port)
+
+    def disconnect_port(self):
+        try:
+            self.com.close()
+            self.plainTextEdit_2.appendPlainText('%s Port %s has been disconnected' % (dts(), self.port))
+        except:
+            log_exception(self.logger)
+            self.plainTextEdit_2.setPlainText('Port %s disconnection error' % self.port)
 
     def hex_from_str(self, v):
         h = ''
@@ -142,10 +152,11 @@ class MainWindow(QMainWindow):
         # stat = self.com.write(h.encode())
         # self.logger.debug('%s of %s bytes written', stat, len(h))
 
-
-    def on_quit(self) :
+    def on_quit(self):
+        self.com.close()
         # Save global settings
-        save_settings(self, file_name=CONFIG_FILE, widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
+        save_settings(self, file_name=CONFIG_FILE,
+                      widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
 
     def timer_handler(self):
         try:
@@ -154,7 +165,7 @@ class MainWindow(QMainWindow):
                 return
             result = b''
             r = self.com.read(1)
-            while len(r) > 0:
+            while r:
                 result += r
                 r = self.com.read(1)
             if len(result) > 0:
@@ -172,8 +183,8 @@ class MainWindow(QMainWindow):
 
 
 def dts():
-    #return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-    return datetime.utcnow().strftime('%H:%M:%S.%f')[:-3]
+    # return datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+    return datetime.today().strftime('%H:%M:%S.%f')[:-3]
 
 
 if __name__ == '__main__':

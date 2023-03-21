@@ -6,6 +6,8 @@ A. L. Sanin, started 05.07.2021
 """
 
 import logging
+import os
+import sys
 import time
 
 import tango
@@ -20,7 +22,7 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '2.0'
+APPLICATION_VERSION = '3.0'  # save config to properties remover (unsafe)
 
 
 class TangoServerPrototype(Device):
@@ -50,8 +52,8 @@ class TangoServerPrototype(Device):
 
     # ******** init_device ***********
     def init_device(self):
-        Device.init_device(self)
-        self.set_state(DevState.INIT)
+        super().init_device()
+        self.set_state(DevState.INIT, 'Prototype server initialization')
         # default logger
         self.logger = config_logger()
         # default configuration
@@ -71,14 +73,73 @@ class TangoServerPrototype(Device):
         self.logger.debug('Log level has been set to %s',
                           logging.getLevelName(self.logger.getEffectiveLevel()))
         self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
-        self.set_state(DevState.RUNNING)
         self.device_list.append(self)
+        self.set_state(DevState.RUNNING, 'Prototype initialization finished')
         return True
 
     def delete_device(self):
-        self.write_config_to_properties()
+        # self.write_config_to_properties()
+        super().delete_device()
 
     # ******** attribute r/w procedures ***********
+    def save_polling_state(self, target_property='_polled_attr'):
+        self.config[target_property] = []
+        dev_name = self.get_name()
+        pv = self.properties.get('polled_attr', [])
+        result = []
+        i = 0
+        while i < len(pv):
+            try:
+                v = int(pv[i + 1])
+                result.append(pv[i])
+                result.append(pv[i + 1])
+                i += 1
+            except KeyboardInterrupt:
+                raise
+            except:
+                pass
+            i += 1
+        if result:
+            self.properties[target_property] = result
+            # self.logger.debug(f'polled_attr {dev_name}: {pv} {result} saved ')
+            return True
+        else:
+            if pv:
+                self.logger.info(f'Wrong format for polled_attr {dev_name}: {pv}, save ignored')
+                return False
+            else:
+                del self.properties[target_property]
+                # db.delete_device_property(dev_name, target_property)
+                self.logger.debug(f'{target_property} deleted')
+
+    def get_saved_polling_period(self, attr_name, prop_name='_polled_attr'):
+        try:
+            pa = self.properties.get(prop_name)
+            i = pa.index(attr_name)
+            if i < 0:
+                return -1
+            return int(pa[i + 1])
+        except KeyboardInterrupt:
+            raise
+        except:
+            return -1
+
+    def restore_polling(self, attr_name=None):
+        try:
+            dp = tango.DeviceProxy(self.get_name())
+            for name in self.ceated_attributes:
+                if attr_name is None or attr_name == name:
+                    pp = self.get_saved_polling_period(name)
+                    if pp > 0:
+                        dp.poll_attribute(name, pp)
+                        # workaround to prevent tango feature
+                        time.sleep(self.POLLING_ENABLE_DELAY)
+                        self.logger.info(f'Polling for {self.get_name()} {name} of {pp} restored')
+        except KeyboardInterrupt:
+            raise
+        except:
+            log_exception(self.logger)
+
     def read_server_version(self):
         return self.server_version_value
 
@@ -92,6 +153,8 @@ class TangoServerPrototype(Device):
         try:
             try:
                 v = int(value)
+            except KeyboardInterrupt:
+                raise
             except:
                 v = value.upper()
             self.logger.setLevel(v)
@@ -102,6 +165,8 @@ class TangoServerPrototype(Device):
             level = TANGO_LOG_LEVELS[self.read_log_level()]
             tango.DeviceProxy(dserver.get_name()).command_inout('SetLoggingLevel', [[level], [self.get_name()]])
             self.set_running()
+        except KeyboardInterrupt:
+            raise
         except:
             self.set_fault('Can not set Log level to %s' % value)
             self.log_exception('Can not set Log level to %s', value)
@@ -123,29 +188,41 @@ class TangoServerPrototype(Device):
     def set_log_level(self, level):
         self.write_log_level(level)
         msg = '%s Log level has been set to %s' % (self.get_name(), self.read_log_level())
-        self.info(msg)
+        self.logger.info(msg)
 
     # ******** additional helper functions ***********
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         msg = '%s %s ' % (self.get_name(), message)
         log_exception(self, msg, *args, level=level, stacklevel=3, **kwargs)
 
-    def debug(self, message='', *args, **kwargs):
+    def log_debug(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.debug(message, *args, stacklevel=2, **kwargs)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            self.logger.debug(message, *args, stacklevel=2, **kwargs)
+        else:
+            self.logger.debug(message, *args, **kwargs)
 
-    def info(self, message='', *args, **kwargs):
+    def log_info(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.info(message, *args, stacklevel=2, **kwargs)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            self.logger.info(message, *args, stacklevel=2, **kwargs)
+        else:
+            self.logger.info(message, *args, **kwargs)
 
-    def warning(self, message='', *args, **kwargs):
+    def log_warning(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
-        self.logger.warning(message, *args, stacklevel=2, **kwargs)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            self.logger.warning(message, *args, stacklevel=2, **kwargs)
+        else:
+            self.logger.warning(message, *args, **kwargs)
 
-    def error(self, message='', *args, **kwargs):
+    def log_error(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
         # kwargs['stacklevel'] = kwargs.copy().pop('stacklevel', 1) +1
-        self.logger.error(message, *args, stacklevel=2, **kwargs)
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            self.logger.error(message, *args, stacklevel=2, **kwargs)
+        else:
+            self.logger.error(message, *args, **kwargs)
 
     def get_device_property(self, prop: str, default=None):
         try:
@@ -161,6 +238,8 @@ class TangoServerPrototype(Device):
                 return default
             else:
                 return type(default)(result)
+        except KeyboardInterrupt:
+            raise
         except:
             return default
 
@@ -170,6 +249,8 @@ class TangoServerPrototype(Device):
             db = tango.Database()
             # self.device_proxy.put_property({prop: value})
             db.put_device_property(self.get_name(), {prop: [value]})
+        except KeyboardInterrupt:
+            raise
         except:
             self.log_exception('Error writing property %s for %s' % (prop, self.get_name()))
 
@@ -201,12 +282,16 @@ class TangoServerPrototype(Device):
                 self.config[p] = type(self.config[p])(props[p][0])
             else:
                 self.config[p] = props[p][0]
+        # remove tango used or unnecessary properties
+        self.config.pop('polled_attr', None)
+        self.config.pop('_polled_attr', None)
 
     def write_config_to_properties(self):
-        for p in self.config:
-            if p not in self.properties:
-                self.properties[p] = self.config[p]
-        # self.device_proxy.put_property(self.config.data)
+        return
+        # for p in self.config:
+        #     if p not in self.properties:
+        #         self.properties[p] = self.config[p]
+        # # self.device_proxy.put_property(self.config.data)
 
     def read_config_from_file(self, file_name=None):
         if file_name is None:
@@ -236,13 +321,64 @@ class TangoServerPrototype(Device):
         # self.start_logging() # has no effect
         # self.tango_logging = True
 
-    def set_running(self, msg='R/W OK'):
+    def set_running(self, msg='I/O OK'):
         self.set_state(DevState.RUNNING)
         self.set_status(msg)
 
-    def set_fault(self, msg='Error during R/W'):
+    def set_fault(self, msg='Error during I/O'):
         self.set_state(DevState.FAULT)
         self.set_status(msg)
+
+    def set_state(self, state, msg=None):
+        super().set_state(state)
+        if msg is not None:
+            self.set_status(msg)
+
+
+def correct_polled_attr_for_server(server_name=None):
+    d_b = tango.Database()
+    if not server_name:
+        server_name = os.path.basename(sys.argv[0]).replace('.py', '')
+        # server_name = os.path.basename(__file__).replace('.py', '')
+    pr_n = 'polled_attr'
+    dev_cl = d_b.get_device_class_list(server_name + '/' + sys.argv[1])
+    vst = dev_cl.value_string
+    i = 0
+    for st in vst:
+        if st == server_name:
+            dev_n = vst[i - 1]
+            # d_b.delete_device_property(dev_n, pr_n)
+            pr_v = d_b.get_device_property(dev_n, pr_n)[pr_n]
+            result = []
+            for j in range(len(pr_v)):
+                try:
+                    val = int(pr_v[j + 1])
+                    result.append(pr_v[j])
+                    result.append(pr_v[j + 1])
+                    j += 1
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    # print('Wrong syntax for', pr_v[j], dev_n)
+                    pass
+            # print('Corrected syntax for', dev_n, result)
+            d_b.put_device_property(dev_n, {pr_n: result})
+
+
+def delete_property_for_server(property_name='polled_attr', server_name=None):
+    db = tango.Database()
+    if server_name is None:
+        # get server name from command line
+        server_name = os.path.basename(sys.argv[0]).replace('.py', '')
+    dev_class_list = db.get_device_class_list(server_name + '/' + sys.argv[1]).value_string
+    i = 0
+    for st in dev_class_list:
+        if st == server_name:
+            # next is device name
+            device_name = st[i - 1]
+            db.delete_device_property(device_name, property_name)
+        # scip line with device name
+        i += 1
 
 
 def looping():

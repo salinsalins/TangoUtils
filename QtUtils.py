@@ -172,7 +172,7 @@ class WidgetLogHandler(logging.Handler):
             self.widget.setText(log_entry)
             self.widget.time = time.time() + self.timeout
             if self.timeout > 0.0:
-                self.timer.start(self.timeout * 1000)
+                self.timer.start(int(self.timeout * 1000))
 
     def timer_handler(self):
         self.widget.setText('')
