@@ -365,6 +365,22 @@ def correct_polled_attr_for_server(server_name=None):
             d_b.put_device_property(dev_n, {pr_n: result})
 
 
+def delete_property_for_server(property_name='polled_attr', server_name=None):
+    db = tango.Database()
+    if server_name is None:
+        # get server name from command line
+        server_name = os.path.basename(sys.argv[0]).replace('.py','')
+    dev_class_list = db.get_device_class_list(server_name + '/' + sys.argv[1]).value_string
+    i = 0
+    for st in dev_class_list:
+        if st == server_name:
+            # next is device name
+            device_name = st[i - 1]
+            db.delete_device_property(device_name, property_name)
+        # scip line with device name
+        i += 1
+
+
 def looping():
     for dev in TangoServerPrototype.device_list:
         pass
