@@ -22,7 +22,7 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '2.0'
+APPLICATION_VERSION = '3.0'  # save config to properties remover (unsafe)
 
 
 class TangoServerPrototype(Device):
@@ -369,7 +369,7 @@ def delete_property_for_server(property_name='polled_attr', server_name=None):
     db = tango.Database()
     if server_name is None:
         # get server name from command line
-        server_name = os.path.basename(sys.argv[0]).replace('.py','')
+        server_name = os.path.basename(sys.argv[0]).replace('.py', '')
     dev_class_list = db.get_device_class_list(server_name + '/' + sys.argv[1]).value_string
     i = 0
     for st in dev_class_list:
