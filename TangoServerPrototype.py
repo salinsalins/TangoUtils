@@ -22,7 +22,7 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '3.0'  # save config to properties remover (unsafe)
+APPLICATION_VERSION = '3.0'  # save config to properties removed (unsafe)
 
 
 class TangoServerPrototype(Device):
