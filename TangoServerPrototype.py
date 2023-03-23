@@ -84,8 +84,6 @@ class TangoServerPrototype(Device):
 
     # ******** attribute r/w procedures ***********
     def save_polling_state(self, target_property='_polled_attr'):
-        if self.adam.name == '0000':
-            return False
         self.config[target_property] = []
         dev_name = self.get_name()
         pv = self.properties.get('polled_attr', [])
