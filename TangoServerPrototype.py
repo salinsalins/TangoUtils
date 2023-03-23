@@ -4,10 +4,11 @@
 Prototype for Python based tango device server
 A. L. Sanin, started 05.07.2021
 """
+import sys
+if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
 import logging
 import os
-import sys
 import time
 
 import tango
@@ -83,6 +84,8 @@ class TangoServerPrototype(Device):
 
     # ******** attribute r/w procedures ***********
     def save_polling_state(self, target_property='_polled_attr'):
+        if self.adam.name == '0000':
+            return False
         self.config[target_property] = []
         dev_name = self.get_name()
         pv = self.properties.get('polled_attr', [])

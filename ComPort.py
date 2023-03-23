@@ -1,3 +1,6 @@
+import sys
+if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
+
 import inspect
 import time
 
