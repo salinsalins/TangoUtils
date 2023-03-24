@@ -71,7 +71,7 @@ class TangoServerPrototype(Device):
 
     def set_config(self):
         # set log level
-        level = self.config.get('log_level', logging.DEBUG)
+        level = self.config.get('log_level', logging.INFO)
         self.logger.setLevel(level)
         self.logger.debug('Log level has been set to %s',
                           logging.getLevelName(self.logger.getEffectiveLevel()))
