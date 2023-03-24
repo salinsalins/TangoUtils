@@ -65,6 +65,7 @@ class TangoServerPrototype(Device):
         self.properties = TangoDeviceProperties(self.get_name())
         self.read_config_from_properties()
         # set config
+        self.created_attributes = {}
         self.set_config()
 
     def set_config(self):
@@ -74,7 +75,7 @@ class TangoServerPrototype(Device):
         self.logger.debug('Log level has been set to %s',
                           logging.getLevelName(self.logger.getEffectiveLevel()))
         self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
-        self.device_list.append(self)
+        TangoServerPrototype.device_list.append(self)
         self.set_state(DevState.RUNNING, 'Prototype initialization finished')
         return True
 
@@ -128,7 +129,7 @@ class TangoServerPrototype(Device):
     def restore_polling(self, attr_name=None):
         try:
             dp = tango.DeviceProxy(self.get_name())
-            for name in self.ceated_attributes:
+            for name in self.created_attributes:
                 if attr_name is None or attr_name == name:
                     pp = self.get_saved_polling_period(name)
                     if pp > 0:
