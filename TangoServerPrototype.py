@@ -444,12 +444,8 @@ class DequeLogHandler(logging.Handler):
                 self.setFormatter(formatter)
 
     def emit(self, record):
-        # print('enter1', self.my_lock123)
-        with self.my_lock123:
-            log_entry = self.format(record)
-            # print(self.my_lock123, log_entry)
-            self.deque.append(log_entry)
-        # print('exit1', self.my_lock123)
+        log_entry = self.format(record)
+        self.deque.append(log_entry)
 
     def get_value(self):
         with self.my_lock123:
@@ -458,7 +454,7 @@ class DequeLogHandler(logging.Handler):
             #         print(i)
         # print('exit2', self.my_lock123)
             print(self.deque[0])
-            return ['1','2']
+            return [self.deque[0],self.deque[1]]
 
 
 if __name__ == "__main__":
