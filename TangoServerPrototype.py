@@ -4,20 +4,24 @@
 Prototype for Python based tango device server
 A. L. Sanin, started 05.07.2021
 """
+import collections
+import io
 import sys
-if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
 import logging
 import os
 import time
+from multiprocessing import Lock
+from threading import RLock
 
 import tango
 from tango import AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
 
+if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 from Configuration import Configuration
 from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties
-from config_logger import config_logger
+from config_logger import config_logger, LOG_FORMAT_STRING
 from log_exception import log_exception
 
 ORGANIZATION_NAME = 'BINP'
@@ -52,12 +56,20 @@ class TangoServerPrototype(Device):
                           unit="", format="%7s",
                           doc="Server log level")
 
+    log_messages = attribute(label="log_messages", dtype=[str],
+                             display_level=DispLevel.EXPERT,
+                             access=AttrWriteType.READ,
+                             # unit="", format="%s",
+                             doc="Last 100 logger messages")
+
     # ******** init_device ***********
     def init_device(self):
         super().init_device()
         self.set_state(DevState.INIT, 'Prototype server initialization')
         # default logger
         self.logger = config_logger(level=logging.INFO)
+        self.dlh = None
+        self.configure_deque_logging(100)
         # default configuration
         self.config = Configuration()
         # config from file
@@ -127,6 +139,17 @@ class TangoServerPrototype(Device):
             level = TANGO_LOG_LEVELS[level.upper()]
         # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
         self.dserver_proxy.command_inout('SetLoggingLevel', [[level], [self.get_name()]])
+
+    def read_log_messages(self, attr):
+        if hasattr(self, 'dlh') and self.dlh:
+            # self.logger.debug('%s %s', self.dlh, self.dlh.deque )
+            # return str(self.dlh.deque)
+            # return self.dlh.deque[0]
+            print('***', self.dlh.get_value())
+            return self.dlh.get_value()
+            # attr.set_value(['1', '2', '3'])
+            # return ['1', '2', '3']
+        # return ''
 
     # ******** commands ***********
     @command(dtype_in=int)
@@ -304,6 +327,12 @@ class TangoServerPrototype(Device):
         else:
             self.config.read(file_name)
 
+    def configure_deque_logging(self, maxlen=100):
+        if self.dlh:
+            return
+        self.dlh = DequeLogHandler(maxlen)
+        self.logger.addHandler(self.dlh)
+
     def configure_tango_logging(self):
         # add logging to TLS
         tlh = TangoLogHandler(self)
@@ -394,6 +423,42 @@ def looping():
 
 def post_init_callback():
     print('Empty post_init_callback. Overwrite or disable.')
+
+
+class DequeLogHandler(logging.Handler):
+    def __init__(self, maxlen=100, level=logging.DEBUG, formatter=None):
+        super().__init__(level)
+        self.deque = collections.deque(maxlen=maxlen)
+        self.my_lock123 = Lock()
+        with self.my_lock123:
+            if formatter is None:
+                try:
+                    self.setFormatter(config_logger.log_formatter)
+                except:
+                    try:
+                        log_formatter = logging.Formatter(LOG_FORMAT_STRING, datefmt='%H:%M:%S')
+                        self.setFormatter(log_formatter)
+                    except:
+                        print('ERROR: Formatter is not defined')
+            else:
+                self.setFormatter(formatter)
+
+    def emit(self, record):
+        # print('enter1', self.my_lock123)
+        with self.my_lock123:
+            log_entry = self.format(record)
+            # print(self.my_lock123, log_entry)
+            self.deque.append(log_entry)
+        # print('exit1', self.my_lock123)
+
+    def get_value(self):
+        with self.my_lock123:
+            # for i in self.deque:
+            #     if i:
+            #         print(i)
+        # print('exit2', self.my_lock123)
+            print(self.deque[0])
+            return ['1','2']
 
 
 if __name__ == "__main__":
