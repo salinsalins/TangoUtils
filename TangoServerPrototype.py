@@ -14,6 +14,7 @@ import time
 from multiprocessing import Lock
 from threading import RLock
 
+import numpy
 import tango
 from tango import AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
@@ -28,6 +29,8 @@ ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
 APPLICATION_VERSION = '3.0'  # save config to properties removed (unsafe)
+
+LOG_LIST_LENGTH = 50
 
 
 class TangoServerPrototype(Device):
@@ -56,11 +59,13 @@ class TangoServerPrototype(Device):
                           unit="", format="%7s",
                           doc="Server log level")
 
-    log_messages = attribute(label="log_messages", dtype=[str],
-                             display_level=DispLevel.EXPERT,
-                             access=AttrWriteType.READ,
-                             # unit="", format="%s",
-                             doc="Last 100 logger messages")
+    # log_messages = attribute(label="log_messages", dtype=[str],
+    #                          access=AttrWriteType.READ,
+    #                          # unit="", format="%s",
+    #                          max_dim_x=LOG_LIST_LENGTH,
+    #                          max_dim_y=0,
+    #                          doc="Last logger messages")
+    # display_level = DispLevel.EXPERT,
 
     # ******** init_device ***********
     def init_device(self):
@@ -69,7 +74,7 @@ class TangoServerPrototype(Device):
         # default logger
         self.logger = config_logger(level=logging.INFO)
         self.dlh = None
-        self.configure_deque_logging(100)
+        # self.configure_deque_logging(LOG_LIST_LENGTH)
         # default configuration
         self.config = Configuration()
         # config from file
@@ -141,15 +146,12 @@ class TangoServerPrototype(Device):
         self.dserver_proxy.command_inout('SetLoggingLevel', [[level], [self.get_name()]])
 
     def read_log_messages(self, attr):
+        v = ['']
         if hasattr(self, 'dlh') and self.dlh:
-            # self.logger.debug('%s %s', self.dlh, self.dlh.deque )
-            # return str(self.dlh.deque)
-            # return self.dlh.deque[0]
-            print('***', self.dlh.get_value())
-            return self.dlh.get_value()
-            # attr.set_value(['1', '2', '3'])
-            # return ['1', '2', '3']
-        # return ''
+            # return self.dlh.get_value()
+            v = self.dlh.get_value()
+        attr.set_value(v)
+        return v
 
     # ******** commands ***********
     @command(dtype_in=int)
@@ -187,7 +189,7 @@ class TangoServerPrototype(Device):
             else:
                 del self.properties[target_property]
                 # db.delete_device_property(dev_name, target_property)
-                self.logger.debug(f'Polling is not set, {target_property} deleted')
+                self.logger.debug(f'Polling for {dev_name} is not set, {target_property} deleted')
 
     def get_saved_polling_period(self, attr_name, prop_name='_polled_attr'):
         try:
@@ -328,10 +330,11 @@ class TangoServerPrototype(Device):
             self.config.read(file_name)
 
     def configure_deque_logging(self, maxlen=100):
-        if self.dlh:
+        if hasattr(self.logger, 'tango_dlh'):
             return
         self.dlh = DequeLogHandler(maxlen)
         self.logger.addHandler(self.dlh)
+        self.logger.tango_dlh = self.dlh
 
     def configure_tango_logging(self):
         # add logging to TLS
@@ -442,19 +445,20 @@ class DequeLogHandler(logging.Handler):
                         print('ERROR: Formatter is not defined')
             else:
                 self.setFormatter(formatter)
+        self.setLevel(level)
 
     def emit(self, record):
         log_entry = self.format(record)
         self.deque.append(log_entry)
 
     def get_value(self):
-        with self.my_lock123:
+        # with self.my_lock123:
             # for i in self.deque:
             #     if i:
             #         print(i)
         # print('exit2', self.my_lock123)
-            print(self.deque[0])
-            return [self.deque[0],self.deque[1]]
+        #     return self.deque[0]
+        return list(self.deque)
 
 
 if __name__ == "__main__":
