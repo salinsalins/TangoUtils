@@ -59,12 +59,12 @@ class TangoServerPrototype(Device):
                           unit="", format="%7s",
                           doc="Server log level")
 
-    # log_messages = attribute(label="log_messages", dtype=[str],
-    #                          access=AttrWriteType.READ,
-    #                          # unit="", format="%s",
-    #                          max_dim_x=LOG_LIST_LENGTH,
-    #                          max_dim_y=0,
-    #                          doc="Last logger messages")
+    log_messages = attribute(label="log_messages", dtype=[str],
+                             access=AttrWriteType.READ,
+                             # unit="", format="%s",
+                             max_dim_x=LOG_LIST_LENGTH,
+                             max_dim_y=0,
+                             doc="Last logger messages")
     # display_level = DispLevel.EXPERT,
 
     # ******** init_device ***********
@@ -74,7 +74,7 @@ class TangoServerPrototype(Device):
         # default logger
         self.logger = config_logger(level=logging.INFO)
         self.dlh = None
-        # self.configure_deque_logging(LOG_LIST_LENGTH)
+        self.configure_deque_logging(LOG_LIST_LENGTH)
         # default configuration
         self.config = Configuration()
         # config from file
@@ -331,6 +331,7 @@ class TangoServerPrototype(Device):
 
     def configure_deque_logging(self, maxlen=100):
         if hasattr(self.logger, 'tango_dlh'):
+            self.dlh = self.logger.tango_dlh
             return
         self.dlh = DequeLogHandler(maxlen)
         self.logger.addHandler(self.dlh)
