@@ -61,11 +61,11 @@ class TangoServerPrototype(Device):
 
     log_messages = attribute(label="log_messages", dtype=[str],
                              access=AttrWriteType.READ,
+                             display_level = DispLevel.EXPERT,
                              # unit="", format="%s",
                              max_dim_x=LOG_LIST_LENGTH,
                              max_dim_y=0,
                              doc="Last logger messages")
-    # display_level = DispLevel.EXPERT,
 
     # ******** init_device ***********
     def init_device(self):
