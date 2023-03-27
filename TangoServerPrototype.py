@@ -82,8 +82,8 @@ class TangoServerPrototype(Device):
         # config from properties
         self.properties = TangoDeviceProperties(self.get_name())
         self.read_config_from_properties()
-        # set config
         self.created_attributes = {}
+        # set config
         self.set_config()
 
     def set_config(self):
