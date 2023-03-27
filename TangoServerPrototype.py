@@ -28,8 +28,8 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '3.0'  # save config to properties removed (unsafe)
-
+APPLICATION_VERSION = '4.0'     # from 3.0 save config to properties removed (unsafe)
+                                # from 4.0 TangoServerPrototype.device_list is dictionary
 LOG_LIST_LENGTH = 50
 
 
