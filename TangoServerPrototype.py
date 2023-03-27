@@ -37,7 +37,7 @@ class TangoServerPrototype(Device):
     # ******** class variables ***********
     server_version_value = APPLICATION_VERSION
     server_name_value = APPLICATION_NAME_SHORT
-    device_list = []
+    device_list = {}
     POLLING_ENABLE_DELAY = 0.2
 
     # ******** attributes ***********
@@ -93,7 +93,7 @@ class TangoServerPrototype(Device):
         self.logger.debug('Log level has been set to %s',
                           logging.getLevelName(self.logger.getEffectiveLevel()))
         self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
-        TangoServerPrototype.device_list.append(self)
+        TangoServerPrototype.device_list[self.get_name()] = self
         self.set_state(DevState.RUNNING, 'Prototype initialization finished')
         return True
 
