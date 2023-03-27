@@ -28,8 +28,8 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '4.0'     # from 3.0 save config to properties removed (unsafe)
-                                # from 4.0 TangoServerPrototype.device_list is dictionary
+APPLICATION_VERSION = '5.0'     # from 3.0 save config to properties removed (unsafe)
+                                # from 4.0 TangoServerPrototype.devices is dictionary
 LOG_LIST_LENGTH = 50
 
 
@@ -37,7 +37,7 @@ class TangoServerPrototype(Device):
     # ******** class variables ***********
     server_version_value = APPLICATION_VERSION
     server_name_value = APPLICATION_NAME_SHORT
-    device_list = {}
+    devices = {}
     POLLING_ENABLE_DELAY = 0.2
 
     # ******** attributes ***********
@@ -83,22 +83,19 @@ class TangoServerPrototype(Device):
         self.properties = TangoDeviceProperties(self.get_name())
         self.read_config_from_properties()
         self.created_attributes = {}
-        # set config
-        self.set_config()
-
-    def set_config(self):
         # set log level
         level = self.config.get('log_level', logging.INFO)
         self.logger.setLevel(level)
         self.logger.debug('Log level has been set to %s',
                           logging.getLevelName(self.logger.getEffectiveLevel()))
         self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
-        TangoServerPrototype.device_list[self.get_name()] = self
+        # register device
+        TangoServerPrototype.devices[self.get_name()] = self
+        # set final state
         self.set_state(DevState.RUNNING, 'Prototype initialization finished')
-        return True
 
     def delete_device(self):
-        # self.write_config_to_properties()
+        TangoServerPrototype.devices.pop(self.get_name(), None)
         super().delete_device()
 
     # ******** attribute r/w procedures ***********
@@ -418,7 +415,7 @@ def delete_property_for_server(property_name='polled_attr', server_name=None):
 
 
 def looping():
-    for dev in TangoServerPrototype.device_list:
+    for dev in TangoServerPrototype.devices:
         pass
     print('Empty loop. Overwrite or disable.')
     time.sleep(1.0)
