@@ -220,12 +220,15 @@ class TangoServerPrototype(Device):
         msg = '%s %s ' % (self.get_name(), message)
         log_exception(self, msg, *args, level=level, stacklevel=3, **kwargs)
 
-    def log_debug(self, message='', *args, **kwargs):
-        message = self.get_name() + ' ' + message
+    def log_log(self, level, message='', *args, **kwargs):
+        message = f'{self.get_name()}  {message}'
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-            self.logger.debug(message, *args, stacklevel=2, **kwargs)
+            self.logger.log(level, message, *args, stacklevel=3, **kwargs)
         else:
-            self.logger.debug(message, *args, **kwargs)
+            self.logger.log(level, message, *args, **kwargs)
+
+    def log_debug(self, message='', *args, **kwargs):
+        self.log_log(logging.DEBUG, message, *args, **kwargs)
 
     def log_info(self, message='', *args, **kwargs):
         message = self.get_name() + ' ' + message
