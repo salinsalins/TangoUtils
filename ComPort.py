@@ -45,7 +45,7 @@ class ComPort:
             self.port = port
             self.logger = kwargs.pop('logger', config_logger())
             self.emulated = kwargs.pop('emulated', None)
-            self.suspend_delay = kwargs.pop('suspend_delay', 7.0)
+            self.suspend_delay = kwargs.pop('suspend_delay', 5.0)
             self.args = args
             self.kwargs = kwargs
             self.lock = RLock()
