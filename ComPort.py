@@ -63,6 +63,7 @@ class ComPort:
             self.logger.info(f'New port {self.port} is not ready')
 
     def __del__(self):
+        self.open_counter = 1
         self.close()
 
     def create_port(self):
