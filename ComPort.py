@@ -33,15 +33,17 @@ class ComPort:
         with ComPort._lock:
             if port in ComPort._ports:
                 p = ComPort._ports[port]
-                p.open_counter += 1
                 if isinstance(p.device, EmptyComPort):
+                    _v = p.open_counter
                     p.create_port()
+                    p.open_counter = _v
+                p.open_counter += 1
                 if p.ready:
                     p.logger.debug(f'Using existing port {port}')
                 else:
                     p.logger.ifo(f'Existing port {port} is not ready')
                 return
-            # default init
+            # create new device
             self.port = port
             self.logger = kwargs.pop('logger', config_logger())
             self.emulated = kwargs.pop('emulated', None)
@@ -55,26 +57,27 @@ class ComPort:
             self.device = None
             # create new port and add it to list
             self.create_port()
-            with ComPort._lock:
-                ComPort._ports[self.port] = self
-        if self.ready:
-            self.logger.debug(f'{self.port} has been initialized')
-        else:
-            self.logger.info(f'New port {self.port} is not ready')
+            ComPort._ports[self.port] = self
+            if self.ready:
+                self.logger.debug(f'{self.port} has been initialized')
+            else:
+                self.logger.info(f'New port {self.port} is not ready')
 
     def __del__(self):
-        self.open_counter = 1
+        # self.open_counter = 1
         self.close()
+        # ComPort._ports.pop(self.port, None)
 
     def create_port(self):
         with self.lock:
+            self.open_counter = 1
+            self.suspend_to = 0.0
             try:
                 # create port device
                 if self.port.startswith('FAKE') or self.port.startswith('EMULATED'):
                     if self.emulated is None:
                         self.logger.info(f'{self.port} Emulated port class is not defined')
                         self.device = EmptyComPort()
-                        return
                     self.device = self.emulated(self.port, *self.args, **self.kwargs)
                 elif (self.port.startswith('COM')
                       or self.port.startswith('tty')
@@ -86,23 +89,20 @@ class ComPort:
                 else:
                     self.kwargs['logger'] = self.logger
                     self.device = MoxaTCPComPort(self.port, *self.args, **self.kwargs)
-                if not self.device.isOpen():
-                    self.device.open()
-                self.open_counter = 1
-                if self.device.isOpen():
-                    self.suspend_to = 0.0
-                else:
-                    self.suspend_to = time.time() + self.suspend_delay
             except KeyboardInterrupt:
                 raise
             except:
                 log_exception(self.logger, f'{self.port} Error creating port, using EmptyComPort')
                 self.device = EmptyComPort()
+            if not self.device.isOpen():
+                self.device.open()
+            if not self.device.isOpen():
+                self.suspend()
 
     def close(self):
         with ComPort._lock:
-            try:
-                if self.port in ComPort._ports:
+            if self.port in ComPort._ports:
+                try:
                     with self.lock:
                         self.open_counter -= 1
                         if self.open_counter <= 0:
@@ -113,10 +113,10 @@ class ComPort:
                         else:
                             self.logger.debug(f'Skipped port {self.port} close request')
                             return True
-            except KeyboardInterrupt:
-                raise
-            except:
-                log_exception(self.logger, f'{self.port} Port close exception')
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    log_exception(self.logger, f'{self.port} Port close exception')
 
     def read(self, *args, **kwargs):
         try:
