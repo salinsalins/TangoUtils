@@ -225,6 +225,9 @@
           <pointsize>18</pointsize>
          </font>
         </property>
+        <property name="editable">
+         <bool>true</bool>
+        </property>
         <property name="currentIndex">
          <number>1</number>
         </property>

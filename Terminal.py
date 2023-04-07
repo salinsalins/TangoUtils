@@ -81,7 +81,11 @@ class MainWindow(QMainWindow):
             pass
         try:
             self.port = str(self.lineEdit.text())
-            self.baud = bauds[self.comboBox.currentIndex()]
+            i = self.comboBox.currentIndex()
+            if i < len(bauds):
+                self.baud = bauds[self.comboBox.currentIndex()]
+            else:
+                self.baud = self.comboBox.itemText(i)
             self.com = ComPort(self.port, baudrate=self.baud, timeout=0)
             self.connected = self.com.ready
             if self.com.ready:

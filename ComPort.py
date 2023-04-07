@@ -104,25 +104,25 @@ class ComPort:
                 self.suspend()
 
     def close(self):
-        with ComPort._lock:
-            # if self.port in ComPort._ports:
-            try:
-                with self.lock:
-                    if not self.device.isOpen():
-                        self.open_counter = 1
-                    self.open_counter -= 1
-                    if self.open_counter <= 0:
-                        result = self.device.close()
-                        # ComPort._ports.pop(self.port)
-                        self.logger.debug(f'{self.port} has been closed')
-                        return result
-                    else:
-                        self.logger.debug(f'{self.port} Skipped port close request')
-                        return True
-            except KeyboardInterrupt:
-                raise
-            except:
-                log_exception(self.logger, f'{self.port} Port close exception')
+        # with ComPort._lock:
+        # if self.port in ComPort._ports:
+        try:
+            with self.lock:
+                if not self.device.isOpen():
+                    self.open_counter = 1
+                self.open_counter -= 1
+                if self.open_counter <= 0:
+                    result = self.device.close()
+                    # ComPort._ports.pop(self.port)
+                    self.logger.debug(f'{self.port} has been closed')
+                    return result
+                else:
+                    self.logger.debug(f'{self.port} Skipped port close request')
+                    return True
+        except KeyboardInterrupt:
+            raise
+        except:
+            log_exception(self.logger, f'{self.port} Port close exception')
 
     def read(self, *args, **kwargs):
         try:
@@ -162,6 +162,7 @@ class ComPort:
                 except KeyboardInterrupt:
                     raise
                 except:
+                    self.suspend()
                     return False
             else:
                 return True
@@ -175,6 +176,7 @@ class ComPort:
                 except KeyboardInterrupt:
                     raise
                 except:
+                    self.suspend()
                     return False
             else:
                 return True
@@ -187,29 +189,34 @@ class ComPort:
             if self.device.isOpen():
                 self.suspend_to = 0.0
                 return True
-        try:
-            if isinstance(self.device, EmptyComPort):
-                self.create_port()
-            else:
-                self.device.close()
-                self.device.open()
-            if self.device.isOpen():
-                self.suspend_to = 0.0
-                return True
-            self.suspend()
-            return False
-        except KeyboardInterrupt:
-            raise
-        except:
-            log_exception(self.logger, f'{self.port} ready read exception')
-            self.suspend()
-            return False
+            try:
+                if isinstance(self.device, EmptyComPort):
+                    with ComPort._lock:
+                        ComPort._ports.pop(self.port, 1)
+                        self.create_port()
+                        ComPort._ports[self.port] = self
+                else:
+                    self.device.close()
+                    self.device.open()
+                if self.device.isOpen():
+                    self.suspend_to = 0.0
+                    self.logger.debug(f'{self.port} reopened')
+                    return True
+                self.suspend()
+                self.logger.debug(f'{self.port} reopen failed')
+                return False
+            except KeyboardInterrupt:
+                raise
+            except:
+                log_exception(self.logger, f'{self.port} ready exception')
+                self.suspend()
+                return False
 
     def suspend(self):
         if time.time() < self.suspend_to:
             return
         self.suspend_to = time.time() + self.suspend_delay
-        self.logger.debug(f'{self.port} COM Port Suspended')
+        self.logger.debug(f'{self.port} Suspended for {self.suspend_delay} s')
 
     @property
     def in_waiting(self):
