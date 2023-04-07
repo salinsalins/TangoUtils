@@ -49,7 +49,7 @@ class MainWindow(QMainWindow):
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
         #
         restore_settings(self, file_name=CONFIG_FILE,
-                         widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
+                         widgets=(self.lineEdit, self.comboBox, self.lineEdit_3, self.lineEdit_5))
         v = self.lineEdit_3.text()
         ve = v.encode()
         h = ''
@@ -74,13 +74,14 @@ class MainWindow(QMainWindow):
         self.logger.info('\n---------- Config Finished -----------\n')
 
     def connect_port(self):
+        bauds = ['4800', '9600', '19200', '38400', '57600', '115200']
         try:
             self.com.close()
         except:
             pass
         try:
             self.port = str(self.lineEdit.text())
-            self.baud = int(self.lineEdit_2.text())
+            self.baud = bauds[self.comboBox.currentIndex()]
             self.com = ComPort(self.port, baudrate=self.baud, timeout=0)
             self.connected = self.com.ready
             if self.com.ready:
@@ -93,6 +94,7 @@ class MainWindow(QMainWindow):
 
     def disconnect_port(self):
         try:
+            self.connected = False
             self.com.close()
             self.plainTextEdit_2.appendPlainText('%s Port %s has been disconnected' % (dts(), self.port))
         except:
@@ -156,12 +158,13 @@ class MainWindow(QMainWindow):
         self.com.close()
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE,
-                      widgets=(self.lineEdit, self.lineEdit_2, self.lineEdit_3, self.lineEdit_5))
+                      widgets=(self.lineEdit, self.comboBox, self.lineEdit_3, self.lineEdit_5))
 
     def timer_handler(self):
         try:
             if not self.connected:
-                self.plainTextEdit_2.setPlainText('Port %s connection error' % self.port)
+                # self.logger.debug('Port disconnected')
+                # self.plainTextEdit_2.setPlainText('Port %s connection error' % self.port)
                 return
             result = b''
             r = self.com.read(1)
