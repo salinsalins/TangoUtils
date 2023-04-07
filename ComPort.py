@@ -43,9 +43,9 @@ class ComPort:
                     p.open_counter = _v
                 p.open_counter += 1
                 if p.ready:
-                    p.logger.debug(f'Using existing port {port}')
+                    p.logger.debug(f'{p.port} Using existing port')
                 else:
-                    p.logger.ifo(f'Existing port {port} is not ready')
+                    p.logger.ifo(f'{p.port} Existing port is not ready')
                 return
             # create new device
             self.port = port
@@ -65,7 +65,7 @@ class ComPort:
             if self.ready:
                 self.logger.debug(f'{self.port} has been initialized')
             else:
-                self.logger.info(f'New port {self.port} is not ready')
+                self.logger.info(f'{self.port} New port is not ready')
 
     def __del__(self):
         # self.open_counter = 1
@@ -114,10 +114,10 @@ class ComPort:
                     if self.open_counter <= 0:
                         result = self.device.close()
                         # ComPort._ports.pop(self.port)
-                        self.logger.debug(f'Port {self.port} has been closed')
+                        self.logger.debug(f'{self.port} has been closed')
                         return result
                     else:
-                        self.logger.debug(f'Skipped port {self.port} close request')
+                        self.logger.debug(f'{self.port} Skipped port close request')
                         return True
             except KeyboardInterrupt:
                 raise
@@ -134,7 +134,7 @@ class ComPort:
         except KeyboardInterrupt:
             raise
         except:
-            log_exception(self.logger)
+            log_exception(self.logger, f'{self.port} Read exception')
             self.suspend()
 
     def write(self, *args, **kwargs):
@@ -145,12 +145,12 @@ class ComPort:
                 else:
                     return 0
         except SerialException:
-            log_exception(self.logger, no_info=True)
+            log_exception(self.logger, level=logging.INFO, no_info=True)
             self.suspend()
         except KeyboardInterrupt:
             raise
         except:
-            log_exception(self.logger)
+            log_exception(self.logger, f'{self.port} Write exception')
             self.suspend()
 
     def reset_input_buffer(self):
@@ -209,7 +209,7 @@ class ComPort:
         if time.time() < self.suspend_to:
             return
         self.suspend_to = time.time() + self.suspend_delay
-        self.logger.debug('COM Port Suspended')
+        self.logger.debug(f'{self.port} COM Port Suspended')
 
     @property
     def in_waiting(self):
