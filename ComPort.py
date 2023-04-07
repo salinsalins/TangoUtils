@@ -1,4 +1,8 @@
+import logging
 import sys
+
+from serial import SerialException
+
 if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
 
 import inspect
@@ -101,22 +105,24 @@ class ComPort:
 
     def close(self):
         with ComPort._lock:
-            if self.port in ComPort._ports:
-                try:
-                    with self.lock:
-                        self.open_counter -= 1
-                        if self.open_counter <= 0:
-                            result = self.device.close()
-                            # ComPort._ports.pop(self.port)
-                            self.logger.debug(f'Port {self.port} has been closed')
-                            return result
-                        else:
-                            self.logger.debug(f'Skipped port {self.port} close request')
-                            return True
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    log_exception(self.logger, f'{self.port} Port close exception')
+            # if self.port in ComPort._ports:
+            try:
+                with self.lock:
+                    if not self.device.isOpen():
+                        self.open_counter = 1
+                    self.open_counter -= 1
+                    if self.open_counter <= 0:
+                        result = self.device.close()
+                        # ComPort._ports.pop(self.port)
+                        self.logger.debug(f'Port {self.port} has been closed')
+                        return result
+                    else:
+                        self.logger.debug(f'Skipped port {self.port} close request')
+                        return True
+            except KeyboardInterrupt:
+                raise
+            except:
+                log_exception(self.logger, f'{self.port} Port close exception')
 
     def read(self, *args, **kwargs):
         try:
@@ -138,6 +144,9 @@ class ComPort:
                     return self.device.write(*args, **kwargs)
                 else:
                     return 0
+        except SerialException:
+            log_exception(self.logger, no_info=True)
+            self.suspend()
         except KeyboardInterrupt:
             raise
         except:
@@ -200,6 +209,7 @@ class ComPort:
         if time.time() < self.suspend_to:
             return
         self.suspend_to = time.time() + self.suspend_delay
+        self.logger.debug('COM Port Suspended')
 
     @property
     def in_waiting(self):

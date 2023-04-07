@@ -49,8 +49,10 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             kwargs['stacklevel'] = kwargs.get('stacklevel', 2)
         else:
             kwargs.pop('stacklevel', None)
+        no_info = kwargs.pop('no_info', True)
         logger.log(level, message, **kwargs)
-        logger.debug('Exception Info: ', exc_info=True)
+        if not no_info:
+            logger.debug('Exception Info: ', exc_info=True)
         return message
     except KeyboardInterrupt:
         raise
