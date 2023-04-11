@@ -56,7 +56,8 @@ class ComPort:
             self.kwargs = kwargs
             self.lock = RLock()
             self.open_counter = 0
-            self.current_addr = -1  # address for RS485 devices
+            self.current_addr = -1  # current address for RS485 devices
+            self.used_addr = []     # used addresses list for RS485 devices
             self.suspend_to = 0.0
             self.device = None
             # create new port and add it to list
@@ -104,10 +105,8 @@ class ComPort:
                 self.suspend()
 
     def close(self):
-        # with ComPort._lock:
-        # if self.port in ComPort._ports:
-        try:
-            with self.lock:
+        with self.lock:
+            try:
                 if not self.device.isOpen():
                     self.open_counter = 1
                 self.open_counter -= 1
@@ -119,15 +118,15 @@ class ComPort:
                 else:
                     self.logger.debug(f'{self.port} Skipped port close request')
                     return True
-        except KeyboardInterrupt:
-            raise
-        except:
-            log_exception(self.logger, f'{self.port} Port close exception')
+            except KeyboardInterrupt:
+                raise
+            except:
+                log_exception(self.logger, f'{self.port} Port close exception')
 
     def read(self, *args, **kwargs):
         try:
             with self.lock:
-                if self.ready:
+                if self._ready:
                     return self.device.read(*args, **kwargs)
                 else:
                     return b''
@@ -140,7 +139,7 @@ class ComPort:
     def write(self, *args, **kwargs):
         try:
             with self.lock:
-                if self.ready:
+                if self._ready:
                     return self.device.write(*args, **kwargs)
                 else:
                     return 0
@@ -155,7 +154,7 @@ class ComPort:
 
     def reset_input_buffer(self):
         with self.lock:
-            if self.ready:
+            if self._ready:
                 try:
                     self.device.reset_input_buffer()
                     return True
@@ -169,7 +168,7 @@ class ComPort:
 
     def reset_output_buffer(self):
         with self.lock:
-            if self.ready:
+            if self._ready:
                 try:
                     self.device.reset_output_buffer()
                     return True
@@ -184,33 +183,37 @@ class ComPort:
     @property
     def ready(self):
         with self.lock:
-            if time.time() < self.suspend_to:
-                return False
+            return self._ready
+
+    @property
+    def _ready(self):       # non locking version of ready for internal use
+        if time.time() < self.suspend_to:
+            return False
+        if self.device.isOpen():
+            self.suspend_to = 0.0
+            return True
+        try:
+            if isinstance(self.device, EmptyComPort):
+                with ComPort._lock:
+                    ComPort._ports.pop(self.port, 1)
+                    self.create_port()
+                    ComPort._ports[self.port] = self
+            else:
+                self.device.close()
+                self.device.open()
             if self.device.isOpen():
                 self.suspend_to = 0.0
+                self.logger.debug(f'{self.port} reopened')
                 return True
-            try:
-                if isinstance(self.device, EmptyComPort):
-                    with ComPort._lock:
-                        ComPort._ports.pop(self.port, 1)
-                        self.create_port()
-                        ComPort._ports[self.port] = self
-                else:
-                    self.device.close()
-                    self.device.open()
-                if self.device.isOpen():
-                    self.suspend_to = 0.0
-                    self.logger.debug(f'{self.port} reopened')
-                    return True
-                self.suspend()
-                self.logger.debug(f'{self.port} reopen failed')
-                return False
-            except KeyboardInterrupt:
-                raise
-            except:
-                log_exception(self.logger, f'{self.port} ready exception')
-                self.suspend()
-                return False
+            self.suspend()
+            self.logger.debug(f'{self.port} reopen failed')
+            return False
+        except KeyboardInterrupt:
+            raise
+        except:
+            log_exception(self.logger, f'{self.port} ready exception')
+            self.suspend()
+            return False
 
     def suspend(self):
         if time.time() < self.suspend_to:
@@ -221,7 +224,7 @@ class ComPort:
     @property
     def in_waiting(self):
         with self.lock:
-            if self.ready:
+            if self._ready:
                 try:
                     return self.device.in_waiting
                 except KeyboardInterrupt:
@@ -230,6 +233,20 @@ class ComPort:
                     return 0
             else:
                 return 0
+
+    def use_address(self, addr):
+        with self.lock:
+            if addr in self.used_addr:
+                raise ValueError(f'{self.port} Address {addr} is in use')
+            self.used_addr.append(addr)
+
+    def free_address(self, addr):
+        with self.lock:
+            if addr in self.used_addr:
+                self.used_addr.remove(addr)
+            else:
+                self.logger.debug(f'{self.port} Address {addr} is not in use')
+
 
 
 class EmptyComPort:
