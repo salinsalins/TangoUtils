@@ -45,7 +45,7 @@ class ComPort:
                 if p.ready:
                     p.logger.debug(f'{p.port} Using existing port')
                 else:
-                    p.logger.ifo(f'{p.port} Existing port is not ready')
+                    p.logger.info(f'{p.port} Existing port is not ready')
                 return
             # create new device
             self.port = port
@@ -186,6 +186,7 @@ class ComPort:
     def ready(self):
         with self.lock:
             if time.time() < self.suspend_to:
+                self.logger.debug(f'{self.port} operations suspended')
                 return False
             if self.device.isOpen():
                 self.suspend_to = 0.0
