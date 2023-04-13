@@ -38,13 +38,23 @@ class ComPort:
             if port in ComPort._ports:
                 p = ComPort._ports[port]
                 if isinstance(p.device, EmptyComPort):
-                    _v = p.open_counter
+                    # _v = p.open_counter
                     p.create_port()
-                    p.open_counter = _v
+                    # p.open_counter = _v
                 p.open_counter += 1
+                for i in range(100):
+                    time.sleep(0.05)
+                    p.logger.debug(f'{p.port} Ready: {p.ready}')
+                    if p.ready:
+                        break
                 if p.ready:
                     p.logger.debug(f'{p.port} Using existing port')
                 else:
+                    for i in range(100):
+                        time.sleep(0.05)
+                        p.logger.debug(f'{p.port} Ready: {p.ready}')
+                        if p.ready:
+                            break
                     p.logger.info(f'{p.port} Existing port is not ready')
                 return
             # create new device
@@ -62,6 +72,7 @@ class ComPort:
             self.device = None
             # create new port and add it to list
             self.create_port()
+            self.open_counter = 1
             ComPort._ports[self.port] = self
             if self.ready:
                 self.logger.debug(f'{self.port} has been initialized')
@@ -75,7 +86,7 @@ class ComPort:
 
     def create_port(self):
         with self.lock:
-            self.open_counter = 1
+            # self.open_counter = 1
             self.suspend_to = 0.0
             try:
                 # create port device
@@ -105,25 +116,27 @@ class ComPort:
                 self.suspend()
 
     def close(self):
-        # with ComPort._lock:
-        # if self.port in ComPort._ports:
         try:
             with self.lock:
-                if not self.device.isOpen():
-                    self.open_counter = 1
+                # if not self.device.isOpen():
+                #     self.open_counter = 1
                 self.open_counter -= 1
                 if self.open_counter <= 0:
-                    result = self.device.close()
+                    self.open_counter = 0
+                    self.device.close()
                     # ComPort._ports.pop(self.port)
+                    if self.device.isOpen():
+                        self.logger.debug(f'{self.port} was not closed')
+                        return False
                     self.logger.debug(f'{self.port} has been closed')
-                    return result
                 else:
                     self.logger.debug(f'{self.port} Skipped port close request')
-                    return True
+                return True
         except KeyboardInterrupt:
             raise
         except:
             log_exception(self.logger, f'{self.port} Port close exception')
+            return False
 
     def read(self, *args, **kwargs):
         try:
@@ -186,36 +199,36 @@ class ComPort:
     def ready(self):
         with self.lock:
             if time.time() < self.suspend_to:
-                self.logger.debug(f'{self.port} operations suspended')
+                # self.logger.debug(f'{self.port} operations suspended')
                 return False
-            if self.device.isOpen():
-                self.suspend_to = 0.0
+            if self.suspend_to <= 0.0:
                 return True
-            try:
-                if isinstance(self.device, EmptyComPort):
-                    with ComPort._lock:
-                        ComPort._ports.pop(self.port, 1)
+            # suspension expires
+            self.suspend_to = 0.0
+            # if self.device.isOpen():
+            #     return True
+            with ComPort._lock:
+                try:
+                    if isinstance(self.device, EmptyComPort):
                         self.create_port()
-                        ComPort._ports[self.port] = self
-                else:
-                    self.device.close()
-                    self.device.open()
-                if self.device.isOpen():
-                    self.suspend_to = 0.0
-                    self.logger.debug(f'{self.port} reopened')
-                    return True
-                self.suspend()
-                self.logger.debug(f'{self.port} reopen failed')
-                return False
-            except KeyboardInterrupt:
-                raise
-            except:
-                log_exception(self.logger, f'{self.port} ready exception')
-                self.suspend()
-                return False
+                    else:
+                        self.device.close()
+                        self.device.open()
+                    if self.device.isOpen():
+                        self.logger.debug(f'{self.port} reopened')
+                        return True
+                    self.suspend()
+                    self.logger.debug(f'{self.port} reopen failed')
+                    return False
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    log_exception(self.logger, f'{self.port} ready exception')
+                    self.suspend()
+                    return False
 
     def suspend(self):
-        if time.time() < self.suspend_to:
+        if self.suspend_to > 0.0:
             return
         self.suspend_to = time.time() + self.suspend_delay
         self.logger.debug(f'{self.port} Suspended for {self.suspend_delay} s')
