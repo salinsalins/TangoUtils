@@ -27,35 +27,70 @@ class MoxaTCPComPort:
             self.host = host.strip()
             self.port = int(port)
         self.pre = f'MOXA {self.host}:{self.port}'
-        # self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        # self.socket.connect((self.host, self._port))
-        create_timeout = kwargs.get('create_timeout', MoxaTCPComPort.CREATE_TIMEOUT)
-        self.socket = socket.create_connection((self.host, self.port), create_timeout)
-        timeout = kwargs.get('timeout', MoxaTCPComPort.DEFAULT_TIMEOUT)
-        self.socket.settimeout(timeout)
+        self.socket = None
+        self.error = False
+        self.open()
         self.logger.debug(f'{self.pre} Initialized')
 
+    def open(self):
+        self.error = False
+        try:
+            create_timeout = self.kwargs.get('create_timeout', MoxaTCPComPort.CREATE_TIMEOUT)
+            # self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            # self.socket.connect((self.host, self._port))
+            self.socket = socket.create_connection((self.host, self.port), create_timeout)
+            timeout = self.kwargs.get('timeout', MoxaTCPComPort.DEFAULT_TIMEOUT)
+            self.socket.settimeout(timeout)
+        except KeyboardInterrupt:
+            raise
+        except:
+            log_exception(f'{self.pre} Socket open exception')
+            self.socket = None
+            self.error = True
+
+
     def close(self):
-        self.socket.close()
-        self.logger.debug(f'{self.pre} Socket closed')
-        return True
+        try:
+            self.socket.shutdown(socket.SHUT_RDWR)
+            self.socket.close()
+            self.socket = None
+            self.error = False
+            self.logger.debug(f'{self.pre} Socket closed')
+            return True
+        except KeyboardInterrupt:
+            raise
+        except:
+            log_exception(f'{self.pre} Socket close exception')
+            self.socket = None
+            self.error = True
+            return False
 
     def write(self, cmd):
         try:
-            return self.socket.send(cmd)
+            n = self.socket.send(cmd)
+            if n == len(cmd):
+                self.error = False
+            self.error = True
+            return n
+        except KeyboardInterrupt:
+            raise
         except:
             log_exception(self.logger, f'{self.pre} Write error')
+            self.error = True
             return -1
 
     def read(self, n=1):
         try:
             return self.socket.recv(n)
+        except KeyboardInterrupt:
+            raise
         except:
             log_exception(self.logger, f'{self.pre} Read error')
+            self.error = True
             return b''
 
     def isOpen(self):
-        return True
+        return self.socket is not None
 
     def reset_input_buffer(self):
         b = self.read(1000)
@@ -66,6 +101,7 @@ class MoxaTCPComPort:
             b1 += b
             if time.time() - t0 > 5.0:
                 self.logger.debug(f"{self.pre} Timeout resetting input buffer")
+                # self.error = True
                 return False
         # if b1 != b'':
         #     self.logger.debug(f"{self.pre} Input buffer was not empty {b1}")
@@ -77,3 +113,7 @@ class MoxaTCPComPort:
     @property
     def in_waiting(self):
         return 1
+
+    @property
+    def ready(self):
+        return self.isOpen() and not self.error

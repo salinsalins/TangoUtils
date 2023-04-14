@@ -275,3 +275,7 @@ class EmptyComPort:
 
     def read(self, *args, **kwargs):
         return b''
+
+    @property
+    def ready(self):
+        return False
