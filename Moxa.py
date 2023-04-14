@@ -1,4 +1,5 @@
 import socket
+import time
 
 from config_logger import config_logger
 from log_exception import log_exception
@@ -12,6 +13,7 @@ class MoxaTCPComPort:
     def __init__(self, host: str, port: int = None, **kwargs):
         self.kwargs = kwargs
         self.logger = kwargs.get('logger', config_logger())
+        kwargs['logger'] = self.logger
         if port is None:
             port = MoxaTCPComPort.DEFAULT_PORT
         if ':' in host:
@@ -24,43 +26,49 @@ class MoxaTCPComPort:
         else:
             self.host = host.strip()
             self.port = int(port)
+        self.pre = f'MOXA {self.host}:{self.port}'
         # self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         # self.socket.connect((self.host, self._port))
         create_timeout = kwargs.get('create_timeout', MoxaTCPComPort.CREATE_TIMEOUT)
         self.socket = socket.create_connection((self.host, self.port), create_timeout)
         timeout = kwargs.get('timeout', MoxaTCPComPort.DEFAULT_TIMEOUT)
         self.socket.settimeout(timeout)
+        self.logger.debug(f'{self.pre} Initialized')
 
     def close(self):
         self.socket.close()
+        self.logger.debug(f'{self.pre} Socket closed')
         return True
 
     def write(self, cmd):
         try:
             return self.socket.send(cmd)
         except:
-            log_exception(self.logger)
+            log_exception(self.logger, f'{self.pre} Write error')
             return -1
 
     def read(self, n=1):
         try:
             return self.socket.recv(n)
         except:
+            log_exception(self.logger, f'{self.pre} Read error')
             return b''
 
     def isOpen(self):
         return True
 
     def reset_input_buffer(self):
-        b = b'0'
-        b1 = b''
+        b = self.read(1000)
+        b1 = b'' + b
+        t0 = time.time()
         while len(b) > 0:
             b = self.read(1000)
             b1 += b
-            if b1 != b'':
-                self.logger.error(f"Input buffer is not empty: {b1}")
-        if b1 != b'':
-            self.logger.error(f"Input buffer is not empty: {b1}")
+            if time.time() - t0 > 5.0:
+                self.logger.debug(f"{self.pre} Timeout resetting input buffer")
+                return False
+        # if b1 != b'':
+        #     self.logger.debug(f"{self.pre} Input buffer was not empty {b1}")
         return True
 
     def reset_output_buffer(self):
