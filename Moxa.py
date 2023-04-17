@@ -1,6 +1,8 @@
 import socket
 import time
 
+from _socket import timeout
+
 from config_logger import config_logger
 from log_exception import log_exception
 
@@ -48,7 +50,6 @@ class MoxaTCPComPort:
             self.socket = None
             self.error = True
 
-
     def close(self):
         try:
             self.socket.shutdown(socket.SHUT_RDWR)
@@ -84,6 +85,8 @@ class MoxaTCPComPort:
             return self.socket.recv(n)
         except KeyboardInterrupt:
             raise
+        except timeout:
+            return b''
         except:
             log_exception(self.logger, f'{self.pre} Read error')
             self.error = True
@@ -116,4 +119,7 @@ class MoxaTCPComPort:
 
     @property
     def ready(self):
-        return self.isOpen() and not self.error
+        if self.isOpen() and not self.error:
+            return True
+        if self.isOpen():
+            pass
