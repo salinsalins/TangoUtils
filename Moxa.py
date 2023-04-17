@@ -2,6 +2,7 @@ import socket
 import time
 
 from _socket import timeout
+from serial import PortNotOpenError
 
 from config_logger import config_logger
 from log_exception import log_exception
@@ -51,6 +52,8 @@ class MoxaTCPComPort:
             self.error = True
 
     def close(self):
+        if not self.isOpen():
+            return True
         try:
             self.socket.shutdown(socket.SHUT_RDWR)
             self.socket.close()
@@ -67,20 +70,26 @@ class MoxaTCPComPort:
             return False
 
     def write(self, cmd):
+        if not self.isOpen():
+            raise PortNotOpenError()
         try:
             n = self.socket.send(cmd)
             if n == len(cmd):
                 self.error = False
-            self.error = True
+            else:
+                self.error = True
             return n
         except KeyboardInterrupt:
             raise
         except:
             log_exception(self.logger, f'{self.pre} Write error')
             self.error = True
-            return -1
+            raise
+            # return -1
 
     def read(self, n=1):
+        if not self.isOpen():
+            raise PortNotOpenError()
         try:
             return self.socket.recv(n)
         except KeyboardInterrupt:
@@ -90,7 +99,8 @@ class MoxaTCPComPort:
         except:
             log_exception(self.logger, f'{self.pre} Read error')
             self.error = True
-            return b''
+            raise
+            # return b''
 
     def isOpen(self):
         return self.socket is not None
