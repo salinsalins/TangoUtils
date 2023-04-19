@@ -40,21 +40,17 @@ class ComPort:
                 if isinstance(p.device, EmptyComPort):
                     # _v = p.open_counter
                     p.create_port()
+                    time.sleep(0.05)
                     # p.open_counter = _v
                 p.open_counter += 1
-                for i in range(100):
+                for i in range(10):
                     time.sleep(0.05)
-                    p.logger.debug(f'{p.port} Ready: {p.ready}')
+                    # p.logger.debug(f'{p.port} Ready: {p.ready}')
                     if p.ready:
                         break
                 if p.ready:
                     p.logger.debug(f'{p.port} Using existing port')
                 else:
-                    for i in range(100):
-                        time.sleep(0.05)
-                        p.logger.debug(f'{p.port} Ready: {p.ready}')
-                        if p.ready:
-                            break
                     p.logger.info(f'{p.port} Existing port is not ready')
                 return
             # create new device

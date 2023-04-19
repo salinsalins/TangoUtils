@@ -93,7 +93,11 @@ class MainWindow(QMainWindow):
             kwargs = {}
             for p in params:
                 p1 = p.strip().split('=')
-                kwargs[p1[0].strip()] = p1[1].strip()
+                key = p1[0].strip()
+                val = p1[1].strip()
+                if not ('"' in val or "'" in val):
+                    val = int(val)
+                kwargs[key] = val
             if 'timeout' not in kwargs:
                 kwargs['timeout'] = 0
             # self.com = ComPort(self.port, baudrate=self.baud, timeout=0)
