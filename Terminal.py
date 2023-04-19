@@ -88,9 +88,16 @@ class MainWindow(QMainWindow):
                 self.baud = int(bauds[self.comboBox.currentIndex()])
             else:
                 self.baud = self.comboBox.itemText(i)
-            # self.com = ComPort(self.port, baudrate=self.baud, timeout=0)\
-            self.com = ComPort(self.port, baudrate=self.baud, timeout=0, bytesize=SEVENBITS,
-                 parity=PARITY_EVEN)
+            param = str(self.lineEdit_6.text())
+            params = param.split(' ')
+            kwargs = {}
+            for p in params:
+                p1 = p.strip().split('=')
+                kwargs[p1[0].strip()] = p1[1].strip()
+            if 'timeout' not in kwargs:
+                kwargs['timeout'] = 0
+            # self.com = ComPort(self.port, baudrate=self.baud, timeout=0)
+            self.com = ComPort(self.port, baudrate=int(self.baud), **kwargs)
             self.connected = self.com.ready
             if self.com.ready:
                 self.plainTextEdit_2.appendPlainText('%s Port %s connected successfully' % (dts(), self.port))
