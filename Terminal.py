@@ -51,7 +51,7 @@ class MainWindow(QMainWindow):
         print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
         #
         restore_settings(self, file_name=CONFIG_FILE,
-                         widgets=(self.lineEdit, self.comboBox, self.lineEdit_3, self.lineEdit_5))
+                         widgets=(self.lineEdit, self.comboBox, self.lineEdit_3, self.lineEdit_5, self.lineEdit_6))
         v = self.lineEdit_3.text()
         ve = v.encode()
         h = ''
@@ -180,7 +180,7 @@ class MainWindow(QMainWindow):
         self.com.close()
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE,
-                      widgets=(self.lineEdit, self.comboBox, self.lineEdit_3, self.lineEdit_5))
+                      widgets=(self.lineEdit, self.comboBox, self.lineEdit_3, self.lineEdit_5, self.lineEdit_6))
 
     def timer_handler(self):
         try:
