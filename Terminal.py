@@ -96,7 +96,9 @@ class MainWindow(QMainWindow):
                 if len(p1) == 2:
                     key = p1[0].strip()
                     val = p1[1].strip()
-                    if not ('"' in val or "'" in val):
+                    if '"' in val or "'" in val:
+                        val = val.replace('"', '').replace("'",'')
+                    else:
                         val = int(val)
                     kwargs[key] = val
             if 'timeout' not in kwargs:
