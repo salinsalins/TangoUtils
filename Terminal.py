@@ -1,6 +1,8 @@
 # coding: utf-8
 import sys;
 
+from serial import SEVENBITS, PARITY_EVEN, EIGHTBITS
+
 from ComPort import ComPort
 
 sys.path.append('')
@@ -83,10 +85,12 @@ class MainWindow(QMainWindow):
             self.port = str(self.lineEdit.text())
             i = self.comboBox.currentIndex()
             if i < len(bauds):
-                self.baud = bauds[self.comboBox.currentIndex()]
+                self.baud = int(bauds[self.comboBox.currentIndex()])
             else:
                 self.baud = self.comboBox.itemText(i)
-            self.com = ComPort(self.port, baudrate=self.baud, timeout=0)
+            # self.com = ComPort(self.port, baudrate=self.baud, timeout=0)\
+            self.com = ComPort(self.port, baudrate=self.baud, timeout=0, bytesize=SEVENBITS,
+                 parity=PARITY_EVEN)
             self.connected = self.com.ready
             if self.com.ready:
                 self.plainTextEdit_2.appendPlainText('%s Port %s connected successfully' % (dts(), self.port))

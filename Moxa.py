@@ -2,10 +2,13 @@ import socket
 import time
 
 from _socket import timeout
-from serial import PortNotOpenError
 
 from config_logger import config_logger
 from log_exception import log_exception
+
+
+class PortNotOpenError(Exception):
+    pass
 
 
 class MoxaTCPComPort:
