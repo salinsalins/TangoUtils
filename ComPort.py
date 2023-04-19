@@ -95,8 +95,10 @@ class ComPort:
                       or self.port.startswith('tty')
                       or self.port.startswith('/dev')
                       or self.port.startswith('cua')):
-                    self.kwargs['timeout'] = 0.0
-                    self.kwargs['write_timeout'] = 0.0
+                    if 'timeout' not in self.kwargs:
+                        self.kwargs['timeout'] = 0.0
+                    if 'write_timeout' not in self.kwargs:
+                        self.kwargs['write_timeout'] = 0.0
                     self.device = serial.Serial(self.port, *self.args, **self.kwargs)
                 else:
                     self.kwargs['logger'] = self.logger
