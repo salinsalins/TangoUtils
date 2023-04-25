@@ -39,6 +39,7 @@ class TangoServerPrototype(Device):
     server_name_value = APPLICATION_NAME_SHORT
     devices = {}
     POLLING_ENABLE_DELAY = 0.2
+    DO_NOT_USE_PROPERTIES = ('polled_attr', '_polled_attr')
 
     # ******** attributes ***********
     server_version = attribute(label="server_version", dtype=str,
@@ -71,8 +72,10 @@ class TangoServerPrototype(Device):
     def init_device(self):
         super().init_device()
         self.set_state(DevState.INIT, 'Prototype server initialization')
+        self.name = self.get_name()
         # default logger
         self.logger = config_logger(level=logging.INFO)
+        # logging to deque
         self.dlh = None
         self.configure_deque_logging(LOG_LIST_LENGTH)
         # default configuration
@@ -82,6 +85,7 @@ class TangoServerPrototype(Device):
         # config from properties
         self.properties = TangoDeviceProperties(self.get_name())
         self.read_config_from_properties()
+        # created attributes if any
         self.created_attributes = {}
         # set log level
         level = self.config.get('log_level', logging.INFO)
@@ -298,7 +302,7 @@ class TangoServerPrototype(Device):
         db.put_device_attribute_property(self.get_name(), apr)
 
     def initialize_dynamic_attributes(self):
-        # overwrite to continue created device initialization after init_device()
+        # overwrite to continue device initialization after init_device()
         pass
 
     def read_config_from_properties(self):
@@ -310,9 +314,9 @@ class TangoServerPrototype(Device):
                 self.config[p] = type(self.config[p])(props[p][0])
             else:
                 self.config[p] = props[p][0]
-        # remove tango used or unnecessary properties
-        self.config.pop('polled_attr', None)
-        self.config.pop('_polled_attr', None)
+        # remove properties internally used by tango system
+        for attr_name in TangoServerPrototype.DO_NOT_USE_PROPERTIES:
+            self.config.pop(attr_name, None)
 
     def write_config_to_properties(self):
         return
