@@ -35,16 +35,20 @@ class TangoLogHandler(logging.Handler):
         level = self.level
         if level >= logging.CRITICAL:
             log_entry = self.format(record)
-            self.device.fatal_stream(log_entry)
+            # self.device.fatal_stream(log_entry)
+            print(log_entry, file=self.device.log_fatal)
         elif level >= logging.WARNING:
             log_entry = self.format(record)
-            self.device.error_stream(log_entry)
+            # self.device.error_stream(log_entry)
+            print(log_entry, file=self.device.log_error)
         elif level >= logging.INFO:
             log_entry = self.format(record)
-            self.device.info_stream(log_entry)
+            # self.device.info_stream(log_entry)
+            print(log_entry, file=self.device.log_info)
         elif level >= logging.DEBUG:
             log_entry = self.format(record)
-            self.device.debug_stream(log_entry)
+            # self.device.debug_stream(log_entry)
+            print(log_entry, file=self.device.log_debug)
 
 
 def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
