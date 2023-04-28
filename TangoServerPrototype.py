@@ -97,10 +97,14 @@ class TangoServerPrototype(Device):
         TangoServerPrototype.devices[self.get_name()] = self
         # set final state
         self.set_state(DevState.RUNNING, 'Prototype initialization finished')
+        self.set_config()
 
     def delete_device(self):
         TangoServerPrototype.devices.pop(self.get_name(), None)
         super().delete_device()
+
+    def set_config(self):
+        pass
 
     # ******** attribute r/w procedures ***********
     def read_server_version(self):
