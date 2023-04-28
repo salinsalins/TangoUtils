@@ -101,6 +101,13 @@ class TangoServerPrototype(Device):
 
     def delete_device(self):
         TangoServerPrototype.devices.pop(self.get_name(), None)
+        if hasattr(self, 'init_po'):
+            self.save_polling_state()
+            self.stop_polling()
+            self.init_po = True
+        if hasattr(self, 'init_io'):
+            self.remove_io()
+            self.init_io = True
         super().delete_device()
 
     def set_config(self):
@@ -434,7 +441,20 @@ def looping():
 
 
 def post_init_callback():
-    print('Empty post_init_callback. Overwrite or disable.')
+    # Default post init callback
+    # Adds dynamic attributes and restores polling for them
+    # Called once after all created devices initialization at server startup
+    for dev in TangoServerPrototype.devices:
+        v = TangoServerPrototype.devices[dev]
+        if hasattr(v, 'init_io') and v.init_io:
+            v.add_io()
+            v.init_io = False
+    for dev in TangoServerPrototype.devices:
+        v = TangoServerPrototype.devices[dev]
+        if hasattr(v, 'init_po') and v.init_po:
+            v.restore_polling()
+            v.init_po = False
+
 
 
 class DequeLogHandler(logging.Handler):
