@@ -216,6 +216,8 @@ class TangoServerPrototype(Device):
             return -1
 
     def restore_polling(self, attr_name=None):
+        if not (hasattr(self, 'init_po') and self.init_po):
+            return
         try:
             dp = tango.DeviceProxy(self.get_name())
             for name in self.created_attributes:
@@ -230,6 +232,8 @@ class TangoServerPrototype(Device):
             raise
         except:
             log_exception(self.logger)
+            return
+        self.init_po = False
 
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         msg = '%s %s ' % (self.get_name(), message)
