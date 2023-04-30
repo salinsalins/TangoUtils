@@ -174,6 +174,8 @@ class TangoServerPrototype(Device):
 
     # ******** additional helper functions ***********
     def save_polling_state(self, target_property='_polled_attr'):
+        if not hasattr(self, 'init_po'):
+            return
         self.config[target_property] = []
         dev_name = self.get_name()
         pv = self.properties.get('polled_attr', [])
@@ -188,20 +190,23 @@ class TangoServerPrototype(Device):
             except KeyboardInterrupt:
                 raise
             except:
-                log_exception(self.logger)
+                log_exception(self.logger, f'Wrong format for polled_attr {pv[i]}')
             i += 1
         if result:
+            # write to device properties
             self.properties[target_property] = result
             self.logger.debug(f'Polling state {result} saved to {target_property}')
+            self.init_po = True
             return True
         else:
             if pv:
                 self.logger.info(f'Wrong format for polled_attr {dev_name}: {pv}, save ignored')
+                self.init_po = False
                 return False
             else:
                 del self.properties[target_property]
-                # db.delete_device_property(dev_name, target_property)
-                self.logger.debug(f'Polling for {dev_name} is not set, {target_property} deleted')
+                self.logger.debug(f'Polling for {dev_name} can not be set, {target_property} deleted')
+                self.init_po = False
 
     def get_saved_polling_period(self, attr_name, prop_name='_polled_attr'):
         try:
@@ -239,37 +244,27 @@ class TangoServerPrototype(Device):
         msg = '%s %s ' % (self.get_name(), message)
         log_exception(self, msg, *args, level=level, stacklevel=3, **kwargs)
 
-    def log_log(self, level, message='', *args, **kwargs):
-        message = f'{self.get_name()}  {message}'
-        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-            self.logger.log(level, message, *args, stacklevel=3, **kwargs)
+    def _log(self, level, message='', *args, **kwargs):
+        if hasattr(self, 'pre'):
+            message = f'{self.pre}  {message}'
         else:
-            self.logger.log(level, message, *args, **kwargs)
+            message = f'{self.get_name()}  {message}'
+        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
+            level = kwargs.pop('stacklevel', 1)
+            kwargs['stacklevel'] = level + 2
+        self.logger.log(level, message, *args, **kwargs)
 
     def log_debug(self, message='', *args, **kwargs):
-        self.log_log(logging.DEBUG, message, *args, **kwargs)
+        self._log(logging.DEBUG, message, *args, **kwargs)
 
     def log_info(self, message='', *args, **kwargs):
-        message = self.get_name() + ' ' + message
-        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-            self.logger.info(message, *args, stacklevel=2, **kwargs)
-        else:
-            self.logger.info(message, *args, **kwargs)
+        self._log(logging.INFO, message, *args, **kwargs)
 
     def log_warning(self, message='', *args, **kwargs):
-        message = self.get_name() + ' ' + message
-        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-            self.logger.warning(message, *args, stacklevel=2, **kwargs)
-        else:
-            self.logger.warning(message, *args, **kwargs)
+        self._log(logging.WARNING, message, *args, **kwargs)
 
     def log_error(self, message='', *args, **kwargs):
-        message = self.get_name() + ' ' + message
-        # kwargs['stacklevel'] = kwargs.copy().pop('stacklevel', 1) +1
-        if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-            self.logger.error(message, *args, stacklevel=2, **kwargs)
-        else:
-            self.logger.error(message, *args, **kwargs)
+        self._log(logging.ERROR, message, *args, **kwargs)
 
     def get_device_property(self, prop: str, default=None):
         try:
