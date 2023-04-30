@@ -33,22 +33,28 @@ class TangoLogHandler(logging.Handler):
 
     def emit(self, record):
         level = self.level
-        if level >= logging.CRITICAL:
-            log_entry = self.format(record)
-            # self.device.fatal_stream(log_entry)
-            self.device.get_logger().fatal(log_entry)
-        elif level >= logging.WARNING:
-            log_entry = self.format(record)
-            # self.device.error_stream(log_entry)
-            self.device.get_logger().error(log_entry)
-        elif level >= logging.INFO:
-            log_entry = self.format(record)
-            # self.device.info_stream(log_entry)
-            self.device.get_logger().info(log_entry)
-        elif level >= logging.DEBUG:
-            log_entry = self.format(record)
-            # self.device.debug_stream(log_entry)
-            self.device.get_logger().debug(log_entry)
+        try:
+            if level >= logging.CRITICAL:
+                log_entry = self.format(record)
+                # self.device.fatal_stream(log_entry)
+                self.device.get_logger().fatal(log_entry)
+            elif level >= logging.WARNING:
+                log_entry = self.format(record)
+                # self.device.error_stream(log_entry)
+                self.device.get_logger().error(log_entry)
+            elif level >= logging.INFO:
+                log_entry = self.format(record)
+                # self.device.info_stream(log_entry)
+                self.device.get_logger().info(log_entry)
+            elif level >= logging.DEBUG:
+                log_entry = self.format(record)
+                # self.device.debug_stream(log_entry)
+                self.device.get_logger().debug(log_entry)
+        except KeyboardInterrupt:
+            raise
+        except:
+            # sometimes unexpected (reason?) "no RTTI data" exception occurs
+            pass
 
 
 def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
