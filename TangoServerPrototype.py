@@ -241,8 +241,8 @@ class TangoServerPrototype(Device):
         self.init_po = False
 
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
-        msg = '%s %s ' % (self.get_name(), message)
-        log_exception(self, msg, *args, level=level, stacklevel=3, **kwargs)
+        msg = '%s %s' % (self.get_name(), message)
+        log_exception(self.logger, msg, *args, level=level, stacklevel=3, **kwargs)
 
     def _log(self, level, message='', *args, **kwargs):
         if hasattr(self, 'pre'):
