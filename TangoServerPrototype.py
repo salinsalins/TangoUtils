@@ -28,7 +28,7 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '5.0'     # from 3.0 save config to properties removed (unsafe)
+APPLICATION_VERSION = '5.2'     # from 3.0 save config to properties removed (unsafe)
                                 # from 4.0 TangoServerPrototype.devices is dictionary
 LOG_LIST_LENGTH = 50
 
@@ -73,7 +73,7 @@ class TangoServerPrototype(Device):
         super().init_device()
         self.name = self.get_name()
         self.pre = f'{self.name} Prototype server'
-        self.set_state(DevState.INIT, f'{self.pre} Initialization')
+        self.set_state(DevState.INIT, 'Initialization')
         # default logger
         self.logger = config_logger(level=logging.INFO)
         # logging to deque
@@ -97,7 +97,7 @@ class TangoServerPrototype(Device):
         # register device
         TangoServerPrototype.devices[self.get_name()] = self
         # set final state
-        self.set_state(DevState.RUNNING, f'{self.pre} Initialization finished')
+        self.set_state(DevState.RUNNING, 'Initialization finished')
         self.set_config()
 
     def delete_device(self):
@@ -398,6 +398,11 @@ class TangoServerPrototype(Device):
         super().set_state(state)
         if msg is not None:
             self.set_status(msg)
+
+    def set_status(self, msg):
+        if not msg.startswith(self.pre):
+            msg = f'{self.pre} {msg}'
+        super().set_status(msg)
 
 
 def correct_polled_attr_for_server(server_name=None):
