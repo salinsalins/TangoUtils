@@ -341,11 +341,10 @@ class TangoServerPrototype(Device):
             self.config.pop(attr_name, None)
 
     def write_config_to_properties(self):
-        return
-        # for p in self.config:
-        #     if p not in self.properties:
-        #         self.properties[p] = self.config[p]
-        # # self.device_proxy.put_property(self.config.data)
+        for p in self.config:
+            if p not in self.properties and p not in TangoServerPrototype.DO_NOT_USE_PROPERTIES:
+                self.properties[p] = self.config[p]
+        # self.device_proxy.put_property(self.config.data)
 
     def read_config_from_file(self, file_name=None):
         if file_name is None:
