@@ -87,7 +87,7 @@ class TangoServerPrototype(Device):
         self.properties = TangoDeviceProperties(self.get_name())
         self.read_config_from_properties()
         # created attributes if any
-        self.created_attributes = {}
+        self.dynamic_attributes = {}
         # set log level
         level = self.config.get('log_level', logging.INFO)
         self.logger.setLevel(level)
@@ -104,20 +104,17 @@ class TangoServerPrototype(Device):
         TangoServerPrototype.devices.pop(self.get_name(), None)
         if hasattr(self, 'init_po'):
             self.save_polling_state()
-            self.stop_polling()
+            # self.stop_polling()
             self.init_po = True
         if hasattr(self, 'init_io'):
-            self.remove_io()
+            self.remove_dynamic_attributes()
             self.init_io = True
         super().delete_device()
 
     def set_config(self):
         return
 
-    def add_io(self):
-        return
-
-    def remove_io(self):
+    def remove_dynamic_attributes(self):
         return
 
     # ******** attribute r/w procedures ***********
@@ -233,7 +230,7 @@ class TangoServerPrototype(Device):
             return
         try:
             dp = tango.DeviceProxy(self.get_name())
-            for name in self.created_attributes:
+            for name in self.dynamic_attributes:
                 if attr_name is None or attr_name == name:
                     pp = self.get_saved_polling_period(name)
                     if pp > 0:
@@ -325,7 +322,7 @@ class TangoServerPrototype(Device):
 
     def initialize_dynamic_attributes(self):
         # overwrite to continue device initialization after init_device()
-        self.add_io()
+        pass
 
     def read_config_from_properties(self):
         props = self.properties
@@ -464,7 +461,7 @@ def post_init_callback():
     # Called once after all created devices initialization at server startup
     for dev in TangoServerPrototype.devices:
         v = TangoServerPrototype.devices[dev]
-        v.add_io()
+        v.initialize_dynamic_attributes()
     for dev in TangoServerPrototype.devices:
         v = TangoServerPrototype.devices[dev]
         v.restore_polling()
