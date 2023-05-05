@@ -106,9 +106,9 @@ class TangoServerPrototype(Device):
             self.save_polling_state()
             # self.stop_polling()
             self.init_po = True
-        if hasattr(self, 'init_io'):
+        if hasattr(self, 'init_da'):
             self.remove_dynamic_attributes()
-            self.init_io = True
+            self.init_da = True
         super().delete_device()
 
     def set_config(self):
