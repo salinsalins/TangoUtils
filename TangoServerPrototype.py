@@ -72,6 +72,7 @@ class TangoServerPrototype(Device):
     def init_device(self):
         super().init_device()
         self.name = self.get_name()
+        # prefix for logs
         self.pre = f'{self.name} Prototype server'
         self.set_state(DevState.INIT, 'Initialization')
         # default logger
@@ -84,20 +85,20 @@ class TangoServerPrototype(Device):
         # config from file
         self.read_config_from_file()
         # config from properties
-        self.properties = TangoDeviceProperties(self.get_name())
+        self.properties = TangoDeviceProperties(self.name)
         self.read_config_from_properties()
-        # created attributes if any
+        # dictionary for created attributes
         self.dynamic_attributes = {}
         # set log level
         level = self.config.get('log_level', logging.INFO)
         self.logger.setLevel(level)
-        self.logger.debug(f'{self.pre} Log level has been set to %s',
-                          logging.getLevelName(self.logger.getEffectiveLevel()))
+        self.log_debug('Log level has been set to %s', logging.getLevelName(self.logger.getEffectiveLevel()))
         self.log_level.set_write_value(logging.getLevelName(self.logger.getEffectiveLevel()))
         # register device
-        TangoServerPrototype.devices[self.get_name()] = self
+        TangoServerPrototype.devices[self.name] = self
         # set final state
         self.set_state(DevState.RUNNING, 'Initialization finished')
+        # call set_config, which should be determined for descendants
         self.set_config()
 
     def delete_device(self):
@@ -137,30 +138,33 @@ class TangoServerPrototype(Device):
                 v = value.upper()
             self.logger.setLevel(v)
             # configure tango logging
-            util = tango.Util.instance()
-            dserver = util.get_dserver_device()
-            # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
-            level = TANGO_LOG_LEVELS[self.read_log_level()]
-            tango.DeviceProxy(dserver.get_name()).command_inout('SetLoggingLevel', [[level], [self.get_name()]])
+            # self.set_tango_log_level(value)
             self.set_running()
         except KeyboardInterrupt:
             raise
         except:
             msg = f'{self.pre} Can not set Log level to {value}'
-            self.set_fault(msg)
             self.log_exception(msg)
+            self.set_fault(msg)
 
     def set_tango_log_level(self, level=None):
-        self.util = tango.Util.instance(self)
-        self.dserver = self.util.get_dserver_device()
-        self.dserver_name = self.dserver.get_name()
-        self.dserver_proxy = tango.DeviceProxy(self.dserver_name)
-        if level is None:
-            level = TANGO_LOG_LEVELS[self.read_log_level()]
-        elif isinstance(level, str):
-            level = TANGO_LOG_LEVELS[level.upper()]
-        # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
-        self.dserver_proxy.command_inout('SetLoggingLevel', [[level], [self.get_name()]])
+        try:
+            self.util = tango.Util.instance(self)
+            self.dserver = self.util.get_dserver_device()
+            self.dserver_name = self.dserver.get_name()
+            self.dserver_proxy = tango.DeviceProxy(self.dserver_name)
+            if level is None:
+                level = TANGO_LOG_LEVELS[self.read_log_level()]
+            elif isinstance(level, str):
+                level = TANGO_LOG_LEVELS[level.upper()]
+            # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
+            self.dserver_proxy.command_inout('SetLoggingLevel', [[level], [self.get_name()]])
+        except KeyboardInterrupt:
+            raise
+        except:
+            msg = f'{self.pre} Can not set Log level to {level}'
+            self.log_exception(msg)
+            self.set_fault(msg)
 
     def read_log_messages(self, attr):
         v = ['']
@@ -179,10 +183,9 @@ class TangoServerPrototype(Device):
 
     # ******** additional helper functions ***********
     def save_polling_state(self, target_property='_polled_attr'):
-        if not hasattr(self, 'init_po'):
-            return
+        # if not hasattr(self, 'init_po'):
+        #     return
         self.config[target_property] = []
-        dev_name = self.get_name()
         pv = self.properties.get('polled_attr', [])
         result = []
         i = 0
@@ -205,13 +208,13 @@ class TangoServerPrototype(Device):
             return True
         else:
             if pv:
-                self.log_info(f'Wrong format for polled_attr {dev_name}: {pv}, save ignored')
+                self.log_info(f'Wrong format for polled_attr {pv}, save ignored')
                 self.init_po = False
-                return False
             else:
                 del self.properties[target_property]
                 # self.log_debug(f'Polling for {dev_name} can not be set, {target_property} deleted')
                 self.init_po = False
+            return False
 
     def get_saved_polling_period(self, attr_name, prop_name='_polled_attr'):
         try:
