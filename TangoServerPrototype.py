@@ -446,7 +446,7 @@ def delete_property_for_server(property_name='polled_attr', server_name=None):
             # next is device name
             device_name = st[i - 1]
             db.delete_device_property(device_name, property_name)
-        # scip line with device name
+        # skip line with device name
         i += 1
 
 
