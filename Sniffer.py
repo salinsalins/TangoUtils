@@ -75,6 +75,7 @@ class MainWindow(QMainWindow):
         self.cts2 = None
         self.rts2 = None
         self.connected = False
+        self.not_conn_show = False
         # Load the Qt UI
         uic.loadUi(UI_FILE, self)
         # Default main window parameters
@@ -124,6 +125,7 @@ class MainWindow(QMainWindow):
             self.com1 = serial.Serial(port, **kwargs)
             # self.com1.ctsrts = True
             #
+            self.logger.debug(f'Port {port} connected')
             port = str(self.lineEdit_3.text())
             param = str(self.lineEdit_4.text())
             params = param.split(' ')
@@ -136,9 +138,12 @@ class MainWindow(QMainWindow):
             self.com2 = serial.Serial(port, **kwargs)
             # self.com2.ctsrts = True
             self.connected = True
-            self.plainTextEdit_2.appendPlainText('%s Ports connected successfully' % dts())
+            self.logger.debug(f'Port {port} connected')
+            self.plainTextEdit_2.appendPlainText(f'{dts()} Ports connected successfully')
+            self.logger.debug(f'Ports connected successfully')
         except:
-            self.plainTextEdit_2.setPlainText('Port %s connection error' % port)
+            log_exception(self.logger, 'Port %s connection error' % port)
+            self.plainTextEdit_2.appendPlainText(f'{dts()} Port %s connection error' % port)
 
     def clear_button_clicked(self):
         self.plainTextEdit_2.setPlainText('')
@@ -158,8 +163,11 @@ class MainWindow(QMainWindow):
 
     def timer_handler(self):
         if not self.connected:
-            self.plainTextEdit_2.setPlainText('Not connected')
+            if not self.not_conn_show:
+                self.plainTextEdit_2.appendPlainText(f'{dts()} Not connected, waiting')
+                self.not_conn_show = True
             return
+        self.not_conn_show = False
         v = self.com1.cts
         if self.cts1 != v:
             self.logger.debug('CTS1 %s -> %s', self.cts1, v)
