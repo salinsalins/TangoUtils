@@ -228,26 +228,25 @@ class TangoServerPrototype(Device):
         except:
             return -1
 
-    def restore_polling(self, attr_name=None, prop_name='_polled_attr'):
-        # if not (hasattr(self, 'init_po') and self.init_po):
-        #     return
+    def restore_polling(self, attr_name=None):
+        if not (hasattr(self, 'init_po') and self.init_po):
+            return
         try:
             dp = tango.DeviceProxy(self.get_name())
             for name in self.dynamic_attributes:
-                if hasattr(self, name) and (attr_name is None or attr_name == name):
-                    pp = self.get_saved_polling_period(name, prop_name)
+                if attr_name is None or attr_name == name:
+                    pp = self.get_saved_polling_period(name)
                     if pp > 0:
                         dp.poll_attribute(name, pp)
                         # workaround to prevent tango feature
                         time.sleep(self.POLLING_ENABLE_DELAY)
-                        #
                         self.log_debug(f'Polling for {name} {pp} restored')
         except KeyboardInterrupt:
             raise
         except:
             self.log_exception('Polling restore exception')
             return
-        # self.init_po = False
+        self.init_po = False
 
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         if hasattr(self, 'pre'):
