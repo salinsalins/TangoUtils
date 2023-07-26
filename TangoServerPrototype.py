@@ -479,10 +479,14 @@ class DequeLogHandler(logging.Handler):
             if formatter is None:
                 try:
                     self.setFormatter(config_logger.log_formatter)
+                except KeyboardInterrupt:
+                    raise
                 except:
                     try:
                         log_formatter = logging.Formatter(LOG_FORMAT_STRING, datefmt='%H:%M:%S')
                         self.setFormatter(log_formatter)
+                    except KeyboardInterrupt:
+                        raise
                     except:
                         print('ERROR: Formatter is not defined')
             else:
