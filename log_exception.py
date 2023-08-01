@@ -7,10 +7,10 @@ import traceback
 def exception_short_info():
     ex_type, ex_value, traceback = sys.exc_info()
     if ex_type:
-        if hasattr(ex_value.args[-1], 'desc'):
-            txt = ex_value.args[-1].desc
+        if hasattr(ex_value.args[0], 'desc'):
+            txt = ex_value.args[0].desc
         else:
-            txt = str(ex_value.args[-1])
+            txt = str(ex_value.args[0])
         return ' %s %s' % (ex_type.__name__, txt)
     else:
         return 'Unknown exception'
@@ -42,6 +42,8 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         message += info1
         try:
             message = message % args
+        except KeyboardInterrupt:
+           raise
         except:
             message = message + str(args)
             message = message.replace('%', '_')
@@ -88,6 +90,8 @@ def log(message=None, *args, logger=None, level=logging.DEBUG, stacklevel=1, **k
         if not (sys.version_info.major >= 3 and sys.version_info.minor >= 8):
             kwargs.pop('stacklevel', None)
         logger.log(level, msg, **kwargs)
+    except KeyboardInterrupt:
+       raise
     except:
         info2 = exception_short_info()
         print('Unexpected exception: ', info2)
