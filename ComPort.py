@@ -9,6 +9,7 @@ import inspect
 import time
 
 import serial
+import serial.tools.list_ports
 from threading import RLock, Lock
 
 from Moxa import MoxaTCPComPort
@@ -99,7 +100,15 @@ class ComPort:
                         self.kwargs['timeout'] = 0.0
                     if 'write_timeout' not in self.kwargs:
                         self.kwargs['write_timeout'] = 0.0
-                    self.device = serial.Serial(self.port, *self.args, **self.kwargs)
+                    ports = serial.tools.list_ports.comports()
+                    self.device = None
+                    for p in ports:
+                        if p.device == self.port:
+                            self.device = serial.Serial(self.port, *self.args, **self.kwargs)
+                            break
+                    if self.device is None:
+                        self.logger.info('%s port does not exist', self.port)
+                        self.device = EmptyComPort()
                 else:
                     self.kwargs['logger'] = self.logger
                     self.device = MoxaTCPComPort(self.port, *self.args, **self.kwargs)
