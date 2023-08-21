@@ -21,6 +21,18 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
     ex_type, ex_value, tb = sys.exc_info()
     try:
         info1 = exception_short_info()
+        #
+        if message is None:
+            message = 'Exception: '
+        message += info1
+        try:
+            message = message % args
+        except KeyboardInterrupt:
+           raise
+        except:
+            message = message + str(args)
+            message = message.replace('%', '_')
+        #
         if logger is None or isinstance(logger, str):
             # raise ValueError('Incorrect argument for logger')
             # caller = sys._getframe(1).f_code.co_name
@@ -34,19 +46,9 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             elif hasattr(logger, 'LOGGER'):
                 logger = logger.LOGGER
         if not isinstance(logger, logging.Logger):
-            print('Logger can not be determined')
+            print('Logger can not be determined', message)
             return message
-
-        if message is None:
-            message = 'Exception: '
-        message += info1
-        try:
-            message = message % args
-        except KeyboardInterrupt:
-           raise
-        except:
-            message = message + str(args)
-            message = message.replace('%', '_')
+        #
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
             kwargs['stacklevel'] = kwargs.get('stacklevel', 2)
         else:
