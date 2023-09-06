@@ -253,7 +253,7 @@ class TangoServerPrototype(Device):
             msg = f'{self.pre}  {message}'
         else:
             msg = f'{self.get_name()}  {message}'
-        kwargs['stacklevel'] = kwargs.pop('stacklevel', 1) + 1
+        kwargs['stacklevel'] = kwargs.pop('stacklevel', 2) + 1
         log_exception(self.logger, msg, *args, level=level, **kwargs)
 
     def _log(self, level, message='', *args, **kwargs):
