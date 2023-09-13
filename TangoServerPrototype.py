@@ -434,7 +434,7 @@ def correct_polled_attr_for_server(server_name=None):
             d_b.put_device_property(dev_n, {pr_n: result})
 
 
-def delete_property_for_server(property_name='polled_attr', server_name=None):
+def delete_property_for_server(property_name, server_name=None):
     db = tango.Database()
     if server_name is None:
         # get server name from command line
