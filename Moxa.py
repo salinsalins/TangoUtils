@@ -38,6 +38,9 @@ class MoxaTCPComPort:
         self.open()
         self.logger.debug(f'{self.pre} Initialized')
 
+    def __del__(self):
+        self.close()
+
     def open(self):
         self.error = False
         try:
