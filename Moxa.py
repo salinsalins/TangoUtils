@@ -84,6 +84,7 @@ class MoxaTCPComPort:
                 self.error = False
             else:
                 self.error = True
+                self.logger.info(f'{self.pre} {n} bytes sent instead of {len(cmd)}')
             return n
         except KeyboardInterrupt:
             raise
