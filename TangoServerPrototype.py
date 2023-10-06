@@ -100,6 +100,7 @@ class TangoServerPrototype(Device):
         self.set_state(DevState.RUNNING, 'Initialization finished')
         # call set_config, which should be determined for descendants
         self.set_config()
+        self.set_state(DevState.RUNNING, 'Configuration finished')
 
     def delete_device(self):
         TangoServerPrototype.devices.pop(self.get_name(), None)
