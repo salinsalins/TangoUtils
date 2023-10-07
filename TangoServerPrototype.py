@@ -89,6 +89,10 @@ class TangoServerPrototype(Device):
         self.read_config_from_properties()
         # dictionary for created attributes
         self.dynamic_attributes = {}
+        if not hasattr(self, 'init_dynamic_attributes'):
+            self.init_dynamic_attributes = False
+        if not hasattr(self, 'init_da_polling'):
+            self.init_da_polling = False
         # set log level
         level = self.config.get('log_level', logging.INFO)
         self.logger.setLevel(level)
@@ -102,7 +106,7 @@ class TangoServerPrototype(Device):
         self.set_config()
 
     def delete_device(self):
-        TangoServerPrototype.devices.pop(self.get_name(), None)
+        TangoServerPrototype.devices.pop(self.name, None)
         if hasattr(self, 'init_po'):
             self.save_polling_state()
             # self.stop_polling()
@@ -189,7 +193,7 @@ class TangoServerPrototype(Device):
         pv = self.properties.get('polled_attr', [])
         result = []
         i = 0
-        while i < len(pv):
+        while i < len(pv)-1:
             try:
                 v = int(pv[i + 1])
                 result.append(pv[i])
@@ -216,6 +220,37 @@ class TangoServerPrototype(Device):
                 self.init_po = False
             return False
 
+    def save_da_polling(self, target_property='_polled_dynamic_attr'):
+        # self.config[target_property] = []
+        pv = self.properties.get('polled_attr', [])
+        result = []
+        i = 0
+        while i < len(pv)-1:
+            if pv[i] in self.dynamic_attributes:
+                try:
+                    v = int(pv[i + 1])
+                    result.append(pv[i])
+                    result.append(pv[i + 1])
+                    i += 1
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    self.log_exception(f'Wrong record in polled_attr {pv[i]}')
+            i += 1
+        if result:
+            # write target_property  to device properties
+            self.properties[target_property] = result
+            self.log_debug(f'Polling state {result} saved to {target_property}')
+            return True
+        else:
+            if pv:
+                # py is not empty, target_property last value preserved
+                self.log_info(f'Wrong format for polled_attr {pv}, save ignored')
+            else:
+                # pv is empty, target_property deleted
+                del self.properties[target_property]
+            return False
+
     def get_saved_polling_period(self, attr_name, prop_name='_polled_attr'):
         try:
             pa = self.properties.get(prop_name)
@@ -228,25 +263,33 @@ class TangoServerPrototype(Device):
         except:
             return -1
 
-    def restore_polling(self, attr_name=None):
+    def restore_polling(self, attr_name=None, prop_name='_polled_attr'):
         if not (hasattr(self, 'init_po') and self.init_po):
             return
         try:
             dp = tango.DeviceProxy(self.get_name())
+            pa = self.properties.get(prop_name)
             for name in self.dynamic_attributes:
                 if attr_name is None or attr_name == name:
-                    pp = self.get_saved_polling_period(name)
+                    try:
+                        i = pa.index(attr_name)
+                        pp = int(pa[i + 1])
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        continue
                     if pp > 0:
                         dp.poll_attribute(name, pp)
                         # workaround to prevent tango feature
                         time.sleep(self.POLLING_ENABLE_DELAY)
-                        self.log_debug(f'Polling for {name} {pp} restored')
+                        self.log_debug(f'Polling {pp} for {name} has been restored')
         except KeyboardInterrupt:
             raise
         except:
             self.log_exception('Polling restore exception')
             return
-        self.init_po = False
+        if attr_name is None:
+            self.init_po = False
 
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         if hasattr(self, 'pre'):
