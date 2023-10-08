@@ -267,7 +267,7 @@ class TangoServerPrototype(Device):
             for name in self.dynamic_attributes:
                 if attr_name is None or attr_name == name:
                     try:
-                        i = pa.index(attr_name)
+                        i = pa.index(name)
                         pp = int(pa[i + 1])
                     except KeyboardInterrupt:
                         raise
@@ -370,7 +370,7 @@ class TangoServerPrototype(Device):
         return
 
     def read_config_from_properties(self):
-        props = self.properties
+        props = self.properties.to_dict()
         if not hasattr(self, 'config'):
             self.config = Configuration()
         for p in props:
