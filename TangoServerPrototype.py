@@ -102,8 +102,8 @@ class TangoServerPrototype(Device):
         # set final state
         self.set_state(DevState.RUNNING, 'Initialization finished')
         # call set_config, which should be determined for descendants
-        self.initialize_dynamic_attributes()
         self.set_config()
+        self.initialize_dynamic_attributes()
 
     def delete_device(self):
         TangoServerPrototype.devices.pop(self.name, None)
