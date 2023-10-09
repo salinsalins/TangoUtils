@@ -259,6 +259,7 @@ class EmptyComPort:
 
     def __init__(self, ready=False):
         self.rdy = ready
+        self.lock = RLock()
 
     @property
     def in_waiting(self):
