@@ -64,7 +64,7 @@ class ComPort:
             self.lock = RLock()
             self.open_counter = 0
             self.current_addr = -1  # current address for RS485 devices
-            self.used_addr = []     # used addresses list for RS485 devices
+            self.used_addr = []  # used addresses list for RS485 devices
             self.suspend_to = 0.0
             self.device = None
             # create new port and add it to list
@@ -254,11 +254,10 @@ class ComPort:
                 return 0
 
 
-
-
 class EmptyComPort:
     """Reads nothing, writes 0 bytes"""
-    def __int__(self, ready=False):
+
+    def __init__(self, ready=False):
         self.rdy = ready
 
     @property
