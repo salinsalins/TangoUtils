@@ -257,7 +257,10 @@ class ComPort:
 
 
 class EmptyComPort:
-    """Always not ready, reads nothing, writes 0 bytes"""
+    """Reads nothing, writes 0 bytes"""
+    def __int__(self, ready=False):
+        self.ready = ready
+
     @property
     def in_waiting(self):
         return 0
@@ -266,7 +269,7 @@ class EmptyComPort:
         return True
 
     def isOpen(self):
-        return False
+        return self.ready
 
     def close(self):
         return True
@@ -285,4 +288,4 @@ class EmptyComPort:
 
     @property
     def ready(self):
-        return False
+        return self.ready
