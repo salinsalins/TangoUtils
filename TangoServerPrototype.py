@@ -73,7 +73,7 @@ class TangoServerPrototype(Device):
         super().init_device()
         self.name = self.get_name()
         # prefix for logs
-        self.pre = f'{self.name} Prototype server'
+        self.pre = f'{self.name} Server Prototype'
         self.set_state(DevState.INIT, 'Initialization')
         # default logger
         self.logger = config_logger(level=logging.INFO)
@@ -89,6 +89,9 @@ class TangoServerPrototype(Device):
         self.read_config_from_properties()
         # dictionary for created attributes
         self.dynamic_attributes = {}
+        if not hasattr(self, 'init_count'):
+            self.init_count = -1
+        self.init_count += 1
         # set log level
         level = self.config.get('log_level', logging.INFO)
         self.logger.setLevel(level)
@@ -100,10 +103,10 @@ class TangoServerPrototype(Device):
         self.set_state(DevState.RUNNING, 'Initialization finished')
         # call set_config, which should be determined for descendants
         self.set_config()
-        self.set_state(DevState.RUNNING, 'Configuration finished')
+        self.initialize_dynamic_attributes()
 
     def delete_device(self):
-        TangoServerPrototype.devices.pop(self.get_name(), None)
+        TangoServerPrototype.devices.pop(self.name, None)
         if hasattr(self, 'init_po'):
             self.save_polling_state()
             # self.stop_polling()
@@ -114,9 +117,6 @@ class TangoServerPrototype(Device):
         super().delete_device()
 
     def set_config(self):
-        return
-
-    def remove_dynamic_attributes(self):
         return
 
     # ******** attribute r/w procedures ***********
@@ -150,20 +150,20 @@ class TangoServerPrototype(Device):
 
     def set_tango_log_level(self, level=None):
         try:
-            self.util = tango.Util.instance(self)
-            self.dserver = self.util.get_dserver_device()
-            self.dserver_name = self.dserver.get_name()
-            self.dserver_proxy = tango.DeviceProxy(self.dserver_name)
+            util = tango.Util.instance(self)
+            dserver = util.get_dserver_device()
+            dserver_name = dserver.get_name()
+            dserver_proxy = tango.DeviceProxy(dserver_name)
             if level is None:
                 level = TANGO_LOG_LEVELS[self.read_log_level()]
             elif isinstance(level, str):
                 level = TANGO_LOG_LEVELS[level.upper()]
             # 5 - DEBUG; 4 - INFO; 3 - WARNING; 2 - ERROR; 1 - FATAL; 0 - OFF
-            self.dserver_proxy.command_inout('SetLoggingLevel', [[level], [self.get_name()]])
+            dserver_proxy.command_inout('SetLoggingLevel', [[level], [self.get_name()]])
         except KeyboardInterrupt:
             raise
         except:
-            msg = f'{self.pre} Can not set Log level to {level}'
+            msg = f'Can not set Tango log level to {level}'
             self.log_exception(msg)
             self.set_fault(msg)
 
@@ -184,13 +184,11 @@ class TangoServerPrototype(Device):
 
     # ******** additional helper functions ***********
     def save_polling_state(self, target_property='_polled_attr'):
-        # if not hasattr(self, 'init_po'):
-        #     return
         self.config[target_property] = []
         pv = self.properties.get('polled_attr', [])
         result = []
         i = 0
-        while i < len(pv):
+        while i < len(pv)-1:
             try:
                 v = int(pv[i + 1])
                 result.append(pv[i])
@@ -217,6 +215,37 @@ class TangoServerPrototype(Device):
                 self.init_po = False
             return False
 
+    def save_da_polling(self, target_property='_polled_dynamic_attr'):
+        # self.config[target_property] = []
+        pv = self.properties.get('polled_attr', [])
+        result = []
+        i = 0
+        while i < len(pv)-1:
+            if pv[i] in self.dynamic_attributes:
+                try:
+                    v = int(pv[i + 1])
+                    result.append(pv[i])
+                    result.append(pv[i + 1])
+                    i += 1
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    self.log_exception(f'Wrong record in polled_attr {pv[i]}')
+            i += 1
+        if result:
+            # write target_property  to device properties
+            self.properties[target_property] = result
+            self.log_debug(f'Polling state {result} saved to {target_property}')
+            return True
+        else:
+            if pv:
+                # py is not empty, target_property last value preserved
+                self.log_info(f'Wrong format for polled_attr {pv}, save ignored')
+            else:
+                # pv is empty, target_property deleted
+                del self.properties[target_property]
+            return False
+
     def get_saved_polling_period(self, attr_name, prop_name='_polled_attr'):
         try:
             pa = self.properties.get(prop_name)
@@ -229,39 +258,47 @@ class TangoServerPrototype(Device):
         except:
             return -1
 
-    def restore_polling(self, attr_name=None):
+    def restore_polling(self, attr_name=None, prop_name='_polled_attr'):
         if not (hasattr(self, 'init_po') and self.init_po):
             return
         try:
             dp = tango.DeviceProxy(self.get_name())
+            pa = self.properties.get(prop_name)
             for name in self.dynamic_attributes:
                 if attr_name is None or attr_name == name:
-                    pp = self.get_saved_polling_period(name)
+                    try:
+                        i = pa.index(name)
+                        pp = int(pa[i + 1])
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        continue
                     if pp > 0:
                         dp.poll_attribute(name, pp)
                         # workaround to prevent tango feature
                         time.sleep(self.POLLING_ENABLE_DELAY)
-                        self.log_debug(f'Polling for {name} {pp} restored')
+                        self.log_debug(f'Polling {pp} for {name} has been restored')
         except KeyboardInterrupt:
             raise
         except:
             self.log_exception('Polling restore exception')
             return
-        self.init_po = False
+        if attr_name is None:
+            self.init_po = False
 
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         if hasattr(self, 'pre'):
-            msg = f'{self.pre}  {message}'
+            msg = f'{self.pre} {message}'
         else:
-            msg = f'{self.get_name()}  {message}'
+            msg = f'{self.get_name()} {message}'
         kwargs['stacklevel'] = kwargs.pop('stacklevel', 2) + 1
         log_exception(self.logger, msg, *args, level=level, **kwargs)
 
     def _log(self, level, message='', *args, **kwargs):
         if hasattr(self, 'pre'):
-            message = f'{self.pre}  {message}'
+            message = f'{self.pre} {message}'
         else:
-            message = f'{self.get_name()}  {message}'
+            message = f'{self.get_name()} {message}'
         sl = kwargs.pop('stacklevel', 1)
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
             kwargs['stacklevel'] = sl + 2
@@ -324,12 +361,16 @@ class TangoServerPrototype(Device):
         apr[attr_name][prop_name] = str(value)
         db.put_device_attribute_property(self.get_name(), apr)
 
-    def initialize_dynamic_attributes(self):
-        # overwrite to continue device initialization after init_device()
+    def initialize_dynamic_attributes(self, *args, **kwargs):
+        # For device dynamic attribute initialization override this method
+        # and use post_init_callback() method to create device-specific attributes.
         pass
 
+    def remove_dynamic_attributes(self, *args, **kwargs):
+        return
+
     def read_config_from_properties(self):
-        props = self.properties
+        props = self.properties.to_dict()
         if not hasattr(self, 'config'):
             self.config = Configuration()
         for p in props:
@@ -460,9 +501,9 @@ def looping():
 
 
 def post_init_callback():
-    # Default post init callback
-    # Adds dynamic attributes and restores polling for them
-    # Called once after all created devices initialization at server startup
+    # Default post init callback.
+    # Adds device specific dynamic attributes and restores polling for them.
+    # Called once after all created devices initialization at server startup.
     for dev in TangoServerPrototype.devices:
         v = TangoServerPrototype.devices[dev]
         v.initialize_dynamic_attributes()

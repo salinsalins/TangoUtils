@@ -94,7 +94,7 @@ class MoxaTCPComPort:
             raise
             # return -1
 
-    def read(self, n=1):
+    def read(self, n=1, timeout_break=False):
         if not self.isOpen():
             raise PortNotOpenError()
         try:
@@ -102,12 +102,13 @@ class MoxaTCPComPort:
         except KeyboardInterrupt:
             raise
         except timeout:
+            if timeout_break:
+                raise
             return b''
         except:
             log_exception(self.logger, f'{self.pre} Read error')
             self.error = True
             raise
-            # return b''
 
     def isOpen(self):
         return self.socket is not None
