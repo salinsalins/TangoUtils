@@ -264,6 +264,7 @@ class TangoServerPrototype(Device):
         try:
             dp = tango.DeviceProxy(self.get_name())
             pa = self.properties.get(prop_name)
+            rpl = []
             for name in self.dynamic_attributes:
                 if attr_name is None or attr_name == name:
                     try:
@@ -277,7 +278,10 @@ class TangoServerPrototype(Device):
                         dp.poll_attribute(name, pp)
                         # workaround to prevent tango feature
                         time.sleep(self.POLLING_ENABLE_DELAY)
+                        rpl.append(name)
                         self.log_debug(f'Polling {pp} for {name} has been restored')
+            if rpl:
+                self.log_info(f'Polling has been restored for {rpl}')
         except KeyboardInterrupt:
             raise
         except:
