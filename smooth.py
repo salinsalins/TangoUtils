@@ -1,7 +1,9 @@
 import numpy
 
 
-def smooth(self, array, n):
+def smooth(array, n):
+    if n <= 1:
+        return array
     m = int(len(array) / n)
     k = int(len(array) % n)
     if m > 0:
