@@ -1,3 +1,6 @@
+import numpy
+
+
 def smooth(self, array, n):
     m = int(len(array) / n)
     k = int(len(array) % n)
