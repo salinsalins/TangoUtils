@@ -50,7 +50,7 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             return message
         #
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-            kwargs['stacklevel'] = kwargs.get('stacklevel', 2)
+            kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 1
         else:
             kwargs.pop('stacklevel', None)
         no_info = kwargs.pop('no_info', False)
@@ -89,7 +89,9 @@ def log(message=None, *args, logger=None, level=logging.DEBUG, stacklevel=1, **k
                 logger = self.LOGGER
         if not isinstance(logger, logging.Logger):
             raise ValueError('Logger can not be determined')
-        if not (sys.version_info.major >= 3 and sys.version_info.minor >= 8):
+        if (sys.version_info.major >= 3 and sys.version_info.minor >= 8):
+            kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 1
+        else:
             kwargs.pop('stacklevel', None)
         logger.log(level, msg, **kwargs)
     except KeyboardInterrupt:
