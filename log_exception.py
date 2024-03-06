@@ -46,7 +46,7 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             elif hasattr(logger, 'LOGGER'):
                 logger = logger.LOGGER
         if not isinstance(logger, logging.Logger):
-            print('Logger can not be determined', message)
+            print('Logger can not be determined for ', message)
             return message
         #
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
@@ -54,6 +54,8 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         else:
             kwargs.pop('stacklevel', None)
         no_info = kwargs.pop('no_info', False)
+        exc_info = kwargs.pop('exc_info', True)
+        message += " " + info1
         logger.log(level, message, **kwargs)
         if not no_info:
             logger.debug('Exception Info: ', exc_info=True)
