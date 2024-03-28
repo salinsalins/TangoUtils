@@ -17,6 +17,7 @@ def exception_short_info():
 
 
 def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwargs):
+    prefix = getattr(log_exception, 'prefix', '')
     info1 = 'Exception Info can not be determined'
     ex_type, ex_value, tb = sys.exc_info()
     try:
@@ -24,13 +25,13 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         #
         if message is None:
             message = 'Exception: '
-        message += info1
+        message += prefix + info1
         try:
             message = message % args
         except KeyboardInterrupt:
            raise
         except:
-            message = message + str(args)
+            message += 'Args parse error ' + str(args)
             message = message.replace('%', '_')
         #
         if logger is None or isinstance(logger, str):
