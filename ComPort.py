@@ -230,7 +230,7 @@ class ComPort:
                 except KeyboardInterrupt:
                     raise
                 except:
-                    log_exception(self.logger, f'{self.port} ready exception')
+                    log_exception(self.logger, f'{self.port} reopen exception')
                     self.suspend()
                     return False
 
