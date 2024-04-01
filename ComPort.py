@@ -130,14 +130,13 @@ class ComPort:
                 self.open_counter -= 1
                 if self.open_counter <= 0:
                     self.open_counter = 0
-                    self.device.close()
-                    # ComPort._ports.pop(self.port)
                     if self.device.isOpen():
-                        self.logger.debug(f'{self.port} was not closed')
-                        return False
-                    self.logger.debug(f'{self.port} has been closed')
-                else:
-                    self.logger.debug(f'{self.port} Skipped port close request')
+                        self.device.close()
+                        # ComPort._ports.pop(self.port)
+                        if self.device.isOpen():
+                            self.logger.debug(f'{self.port} was not closed')
+                            return False
+                        self.logger.debug(f'{self.port} has been closed')
                 return True
         except KeyboardInterrupt:
             raise
