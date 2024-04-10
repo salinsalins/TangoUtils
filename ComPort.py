@@ -44,6 +44,8 @@ class ComPort:
                     time.sleep(0.05)
                     # p.open_counter = _v
                 p.open_counter += 1
+                if not p.device.isOpen():
+                    p.device.open()
                 for i in range(10):
                     time.sleep(0.05)
                     # p.logger.debug(f'{p.port} Ready: {p.ready}')
