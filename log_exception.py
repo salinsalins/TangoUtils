@@ -17,9 +17,14 @@ def exception_short_info():
 
 
 def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwargs):
-    prefix = getattr(log_exception, 'prefix', '')
+    if isinstance(logger, str):
+        if message is not None:
+            args = tuple([message] + list(args))
+        message = logger
     if message is None:
-        message = prefix + ' Exception: '
+        message = ' Exception: '
+    prefix = getattr(log_exception, 'prefix', '')
+    message = prefix + message
     info1 = 'Exception Info can not be determined'
     ex_type, ex_value, tb = sys.exc_info()
     try:
@@ -35,11 +40,6 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             message = message.replace('%', '_')
         #
         if logger is None or isinstance(logger, str):
-            # raise ValueError('Incorrect argument for logger')
-            # caller = sys._getframe(1).f_code.co_name
-            if message is not None:
-                args = tuple([message] + list(args))
-            message = logger
             logger = inspect.stack()[1].frame.f_locals['self'].logger
         if not isinstance(logger, logging.Logger):
             if hasattr(logger, 'logger'):
