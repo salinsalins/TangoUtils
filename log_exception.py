@@ -55,7 +55,7 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         else:
             kwargs.pop('stacklevel', None)
         if 'no_info' in kwargs:
-            exc_info = kwargs.pop('no_info', False)
+            exc_info = not kwargs.pop('no_info', True)
         else:
             exc_info = kwargs.pop('exc_info', True)
         message += " " + info1
