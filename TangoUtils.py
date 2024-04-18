@@ -426,10 +426,20 @@ class TangoDeviceAttributeProperties(TangoProperties):
             return False
 
 
-def tango_exception_reason():
-    ex_type, ex_value, traceback = sys.exc_info()
-    if ex_type == DevFailed:
-        return ex_value.args[0].reason
+def tango_exception_reason(e=None):
+    if e is None:
+        ex_type, ex_value, traceback = sys.exc_info()
+        if ex_type == DevFailed:
+            return ex_value.args[-1].reason
     else:
-        # Not DevFailed Exception
-        return ''
+        return e.args[-1].reason
+
+
+def tango_exception_description(e=None):
+    if e is None:
+        ex_type, ex_value, traceback = sys.exc_info()
+        if ex_type == DevFailed:
+            return ex_value.args[-1].desc
+    else:
+        return e.args[-1].desc
+    return ''
