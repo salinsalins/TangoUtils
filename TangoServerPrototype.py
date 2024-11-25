@@ -432,12 +432,12 @@ class TangoServerPrototype(Device):
         # self.tango_logging = True
 
     def set_running(self, msg='I/O OK'):
-        self.logger.info(msg)
+        self.logger.info(msg, stacklevel=2)
         self.set_state(DevState.RUNNING)
         self.set_status(msg)
 
     def set_fault(self, msg='Error during I/O'):
-        self.logger.error(msg)
+        self.logger.error(msg, stacklevel=2)
         self.set_state(DevState.FAULT)
         self.set_status(msg)
 
