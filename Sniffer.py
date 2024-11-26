@@ -76,6 +76,7 @@ class MainWindow(QMainWindow):
         self.rts2 = None
         self.connected = False
         self.not_conn_show = False
+        self.buffer = bytearray()
         # Load the Qt UI
         uic.loadUi(UI_FILE, self)
         # Default main window parameters
