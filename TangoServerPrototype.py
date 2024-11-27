@@ -30,7 +30,7 @@ APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
 APPLICATION_VERSION = '5.3'     # from 3.0 save config to properties removed (unsafe)
                                 # from 4.0 TangoServerPrototype.devices is dictionary
-LOG_LIST_LENGTH = 50
+LOG_LIST_LENGTH = 500
 
 
 class TangoServerPrototype(Device):
@@ -432,7 +432,7 @@ class TangoServerPrototype(Device):
         # self.tango_logging = True
 
     def set_running(self, msg='I/O OK'):
-        # self.logger.info(msg, stacklevel=2)
+        self.log_debug(msg, stacklevel=2)
         self.set_state(DevState.RUNNING)
         self.set_status(msg)
 
