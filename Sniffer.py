@@ -96,6 +96,7 @@ class MainWindow(QMainWindow):
             self.cts2 = self.com2.cts
             self.rts2 = self.com2.rts
         # Connect signals with slots
+        self.pushButton_4.clicked.connect(self.save_button_clicked)
         self.pushButton.clicked.connect(self.clear_button_clicked)
         self.pushButton_2.clicked.connect(self.connect_ports)
         self.last_index = self.comboBox.currentIndex()
