@@ -185,7 +185,6 @@ class MainWindow(QMainWindow):
         result = self.read_port(self.com1)
         dt = dts()
         if len(result) > 0:
-            self.buffer.append({('%s 1>2' % dt): result})
             m = self.com2.write(result)
             self.logger.debug('Port1 received %s bytes: %s %s', len(result), result, hex_from_str(result))
             if self.pushButton_3.isChecked():
@@ -197,6 +196,7 @@ class MainWindow(QMainWindow):
                     r = hex_from_str(result)
                 elif n == 2:
                     r = dec_from_str(result)
+                self.buffer.append({('%s 1>2' % dt): result})
                 self.plainTextEdit_2.appendPlainText('%s 1>2 %s' % (dt, r))
         # COM2
         v = self.com2.cts
@@ -211,7 +211,6 @@ class MainWindow(QMainWindow):
         result = self.read_port(self.com2)
         dt = dts()
         if len(result) > 0:
-            self.buffer.append({('%s 2>1' % dt): result})
             m = self.com1.write(result)
             self.logger.debug('Port2 received %s bytes: %s %s', len(result), result, hex_from_str(result))
             if self.pushButton_3.isChecked():
@@ -223,6 +222,7 @@ class MainWindow(QMainWindow):
                     r = hex_from_str(result)
                 elif n == 2:
                     r = dec_from_str(result)
+                self.buffer.append({('%s 2>1' % dt): result})
                 self.plainTextEdit_2.appendPlainText('%s 2>1 %s' % (dt, r))
 
     def combobox_index_changed(self, n):
