@@ -76,7 +76,7 @@ class MainWindow(QMainWindow):
         self.rts2 = None
         self.connected = False
         self.not_conn_show = False
-        self.buffer = bytearray()
+        self.buffer = []
         # Load the Qt UI
         uic.loadUi(UI_FILE, self)
         # Default main window parameters
@@ -141,13 +141,16 @@ class MainWindow(QMainWindow):
             self.connected = True
             self.logger.debug(f'Port {port} connected')
             self.plainTextEdit_2.appendPlainText(f'{dts()} Ports connected successfully')
+            self.buffer.append({f'{dts()} Ports connected successfully': b''})
             self.logger.debug(f'Ports connected successfully')
         except:
             log_exception(self.logger, 'Port %s connection error' % port)
             self.plainTextEdit_2.appendPlainText(f'{dts()} Port %s connection error' % port)
+            self.buffer.append({f'{dts()} Port %s connection error' % port: b''})
 
     def clear_button_clicked(self):
         self.plainTextEdit_2.setPlainText('')
+        self.buffer = []
 
     def on_quit(self) :
         # Save global settings
@@ -166,6 +169,7 @@ class MainWindow(QMainWindow):
         if not self.connected:
             if not self.not_conn_show:
                 self.plainTextEdit_2.appendPlainText(f'{dts()} Not connected, waiting')
+                self.buffer.append({f'{dts()} Not connected, waiting': b''})
                 self.not_conn_show = True
             return
         self.not_conn_show = False
@@ -181,6 +185,7 @@ class MainWindow(QMainWindow):
         result = self.read_port(self.com1)
         dt = dts()
         if len(result) > 0:
+            self.buffer.append({('%s 1>2' % dt): result})
             m = self.com2.write(result)
             self.logger.debug('Port1 received %s bytes: %s %s', len(result), result, hex_from_str(result))
             if self.pushButton_3.isChecked():
@@ -206,6 +211,7 @@ class MainWindow(QMainWindow):
         result = self.read_port(self.com2)
         dt = dts()
         if len(result) > 0:
+            self.buffer.append({('%s 2>1' % dt): result})
             m = self.com1.write(result)
             self.logger.debug('Port2 received %s bytes: %s %s', len(result), result, hex_from_str(result))
             if self.pushButton_3.isChecked():
@@ -222,33 +228,45 @@ class MainWindow(QMainWindow):
     def combobox_index_changed(self, n):
         try:
             n = self.comboBox.currentIndex()
-            txt = self.plainTextEdit_2.toPlainText()
             self.plainTextEdit_2.setPlainText('')
-            lines = txt.split('\n')
-            for line in lines:
-                i1 = line.find('1>2')
-                i2 = line.find('2>1')
-                if i1 > 0 or i2 > 0:
-                    head = line[:i1+1+i2+4]
-                    tail = line[i1+1+i2+4:]
-                    result = ''
-                    if self.last_index == 0:
-                        result = tail[2:-1].encode()
-                    elif self.last_index == 1:
-                        result = str_from_hex(tail).encode()
-                    elif self.last_index == 2:
-                        result = str_from_dec(tail).encode()
+            for key in self.buffer:
+                result = self.buffer[key]
+                r = ''
+                if result != b'':
                     if n == 0:
                         r = str(result)
                     elif n == 1:
                         r = hex_from_str(result)
                     elif n == 2:
                         r = dec_from_str(result)
-                    else:
-                        r = ''
-                    self.plainTextEdit_2.appendPlainText('%s%s' % (head, r))
-                else:
-                    self.plainTextEdit_2.appendPlainText(line)
+                self.plainTextEdit_2.appendPlainText('%s %s' % (key, r))
+            # txt = self.plainTextEdit_2.toPlainText()
+            # self.plainTextEdit_2.setPlainText('')
+            # lines = txt.split('\n')
+            # for line in lines:
+            #     i1 = line.find('1>2')
+            #     i2 = line.find('2>1')
+            #     if i1 > 0 or i2 > 0:
+            #         head = line[:i1+1+i2+4]
+            #         tail = line[i1+1+i2+4:]
+            #         result = ''
+            #         if self.last_index == 0:
+            #             result = tail[2:-1].encode()
+            #         elif self.last_index == 1:
+            #             result = str_from_hex(tail).encode()
+            #         elif self.last_index == 2:
+            #             result = str_from_dec(tail).encode()
+            #         if n == 0:
+            #             r = str(result)
+            #         elif n == 1:
+            #             r = hex_from_str(result)
+            #         elif n == 2:
+            #             r = dec_from_str(result)
+            #         else:
+            #             r = ''
+            #         self.plainTextEdit_2.appendPlainText('%s%s' % (head, r))
+            #     else:
+            #         self.plainTextEdit_2.appendPlainText(line)
         except:
             log_exception(self)
         self.last_index = n
