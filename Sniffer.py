@@ -141,12 +141,12 @@ class MainWindow(QMainWindow):
             self.connected = True
             self.logger.debug(f'Port {port} connected')
             self.plainTextEdit_2.appendPlainText(f'{dts()} Ports connected successfully')
-            self.buffer.append({f'{dts()} Ports connected successfully': b''})
+            self.buffer.append({f'{dts()} Ports connected successfully': None})
             self.logger.debug(f'Ports connected successfully')
         except:
             log_exception(self.logger, 'Port %s connection error' % port)
             self.plainTextEdit_2.appendPlainText(f'{dts()} Port %s connection error' % port)
-            self.buffer.append({f'{dts()} Port %s connection error' % port: b''})
+            self.buffer.append({f'{dts()} Port %s connection error' % port: None})
 
     def clear_button_clicked(self):
         self.plainTextEdit_2.setPlainText('')
@@ -169,7 +169,7 @@ class MainWindow(QMainWindow):
         if not self.connected:
             if not self.not_conn_show:
                 self.plainTextEdit_2.appendPlainText(f'{dts()} Not connected, waiting')
-                self.buffer.append({f'{dts()} Not connected, waiting': b''})
+                self.buffer.append({f'{dts()} Not connected, waiting': None})
                 self.not_conn_show = True
             return
         self.not_conn_show = False
@@ -232,7 +232,7 @@ class MainWindow(QMainWindow):
             for key in self.buffer:
                 result = self.buffer[key]
                 r = ''
-                if result != b'':
+                if result is not None:
                     if n == 0:
                         r = str(result)
                     elif n == 1:
