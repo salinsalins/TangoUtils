@@ -152,6 +152,9 @@ class MainWindow(QMainWindow):
         self.plainTextEdit_2.setPlainText('')
         self.buffer = []
 
+    def save_button_clicked(self):
+        print('Save not implemented')
+
     def on_quit(self) :
         # Save global settings
         save_settings(self, file_name=CONFIG_FILE, widgets=(self.lineEdit, self.lineEdit_2,
