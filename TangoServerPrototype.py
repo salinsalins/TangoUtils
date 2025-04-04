@@ -167,12 +167,13 @@ class TangoServerPrototype(Device):
             self.log_exception(msg)
             self.set_fault(msg)
 
-    def read_log_messages(self, attr):
+    def read_log_messages(self, attr=None):
         v = ['']
         if hasattr(self, 'dlh') and self.dlh:
             # return self.dlh.get_value()
             v = self.dlh.get_value()
-        attr.set_value(v)
+        if attr is not None:
+            attr.set_value(v)
         return v
 
     # ******** commands ***********
