@@ -32,10 +32,13 @@ APPLICATION_VERSION = '5.3'     # from 3.0 save config to properties removed (un
                                 # from 4.0 TangoServerPrototype.devices is dictionary
 LOG_LIST_LENGTH = 500
 
+FMT = os.path.getmtime(__file__)
+FMTS = time.strftime("%d-%m-%Y-%H:%M:%S", time.gmtime(os.path.getmtime(__file__)))
+
 
 class TangoServerPrototype(Device):
     # ******** class variables ***********
-    server_version_value = APPLICATION_VERSION
+    server_version_value = APPLICATION_VERSION + ' ' + FMTS
     server_name_value = APPLICATION_NAME_SHORT
     devices = {}
     POLLING_ENABLE_DELAY = 0.2
