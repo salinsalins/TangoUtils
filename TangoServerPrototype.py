@@ -45,6 +45,12 @@ class TangoServerPrototype(Device):
     DO_NOT_USE_PROPERTIES = ('polled_attr', '_polled_attr')
 
     # ******** attributes ***********
+    file_modified_time = attribute(label="file_time", dtype=str,
+                               display_level=DispLevel.EXPERT,
+                               access=AttrWriteType.READ,
+                               unit="", format="%s",
+                               doc="Python file modification time")
+
     server_version = attribute(label="server_version", dtype=str,
                                display_level=DispLevel.OPERATOR,
                                access=AttrWriteType.READ,
@@ -123,6 +129,9 @@ class TangoServerPrototype(Device):
         return
 
     # ******** attribute r/w procedures ***********
+    def read_file_modified_time(self):
+        return time.strftime("%d-%m-%Y-%H:%M:%S", time.gmtime(os.path.getmtime(__file__)))
+
     def read_server_version(self):
         return self.server_version_value
 
