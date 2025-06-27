@@ -40,14 +40,17 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             message = message.replace('%', '_')
         #
         if logger is None or isinstance(logger, str):
-            logger = inspect.stack()[1].frame.f_locals['self'].logger
+            temp = inspect.stack()[1].frame.f_locals
+            if 'self' in temp:
+                logger = inspect.stack()[1].frame.f_locals['self'].logger
         if not isinstance(logger, logging.Logger):
             if hasattr(logger, 'logger'):
                 logger = logger.logger
             elif hasattr(logger, 'LOGGER'):
                 logger = logger.LOGGER
         if not isinstance(logger, logging.Logger):
-            print('Logger can not be determined for ', message)
+            print('Logger can not be determined.')
+            print(message)
             return message
         #
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
