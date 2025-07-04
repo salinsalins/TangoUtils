@@ -559,11 +559,11 @@ class DequeLogHandler(logging.Handler):
         self.deque.append(log_entry)
 
     def get_value(self):
-        # with self.my_lock123:
+        # with self._lock:
             # for i in self.deque:
             #     if i:
             #         print(i)
-        # print('exit2', self.my_lock123)
+        # print('exit2', self._lock)
         #     return self.deque[0]
         return list(self.deque)
 
