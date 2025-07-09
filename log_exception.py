@@ -3,6 +3,8 @@ import logging
 import sys
 import traceback
 
+import config_logger
+
 
 def exception_short_info():
     ex_type, ex_value, traceback = sys.exc_info()
@@ -49,22 +51,25 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             elif hasattr(logger, 'LOGGER'):
                 logger = logger.LOGGER
         if not isinstance(logger, logging.Logger):
-            print('Logger can not be determined.')
+            if hasattr(config_logger.config_logger, 'logger'):
+                logger = config_logger.config_logger.logger
+        if not isinstance(logger, logging.Logger):
+            # print('Logger can not be determined.')
             print(message)
             return message
         #
+        stlvl = kwargs.pop('stacklevel', 1)
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-            kwargs['stacklevel'] = kwargs.get('stacklevel', 1) + 1
-        else:
-            kwargs.pop('stacklevel', None)
+            kwargs['stacklevel'] = stlvl + 1
         if 'no_info' in kwargs:
             exc_info = not kwargs.pop('no_info', True)
         else:
             exc_info = kwargs.pop('exc_info', True)
         message += " " + info1
+        kwargs['exc_info'] = exc_info
         logger.log(level, message, **kwargs)
-        if exc_info:
-            logger.debug('Exception Info: ', exc_info=True)
+        # if exc_info:
+        #     logger.debug('Exception Info: ', exc_info=True)
         return message
     except KeyboardInterrupt:
         raise
