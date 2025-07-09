@@ -28,7 +28,7 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '5.3'     # from 3.0 save config to properties removed (unsafe)
+APPLICATION_VERSION = '5.4'     # from 3.0 save config to properties removed (unsafe)
                                 # from 4.0 TangoServerPrototype.devices is dictionary
 LOG_LIST_LENGTH = 500
 
@@ -401,7 +401,7 @@ class TangoServerPrototype(Device):
 
     def write_config_to_properties(self):
         for p in self.config:
-            if p not in self.properties and p not in TangoServerPrototype.DO_NOT_USE_PROPERTIES:
+            if p not in TangoServerPrototype.DO_NOT_USE_PROPERTIES:
                 self.properties[p] = self.config[p]
         # self.device_proxy.put_property(self.config.data)
 
