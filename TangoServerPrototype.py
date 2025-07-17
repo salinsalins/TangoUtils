@@ -386,10 +386,10 @@ class TangoServerPrototype(Device):
     def remove_dynamic_attributes(self, *args, **kwargs):
         return
 
-    def read_config_from_properties(self):
+    def read_config_from_properties(self, default=None):
         props = self.properties.to_dict()
         if not hasattr(self, 'config'):
-            self.config = Configuration()
+            self.config = Configuration(default=default)
         for p in props:
             if p in self.config:
                 self.config[p] = type(self.config[p])(props[p][0])
