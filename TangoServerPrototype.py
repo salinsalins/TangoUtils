@@ -207,7 +207,11 @@ class TangoServerPrototype(Device):
                 ip = us + ':' + pw + '@' + ip
             if not ip.startswith('http'):
              ip = 'http://' + ip
-            webbrowser.open_new_tab(ip)
+            try:
+                webbrowser.open_new_tab(ip)
+            except:
+                self.log_error('Error opening %s', ip)
+            return
         self.log_debug('No ip property found')
 
     # ******** additional helper functions ***********
