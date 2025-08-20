@@ -18,8 +18,9 @@ import numpy
 import tango
 from tango import AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
+import webbrowser
 
-if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
+if os.path.realpath('../TangoUtils') not in sys.path: sys.path.append(os.path.realpath('../TangoUtils'))
 from Configuration import Configuration
 from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties
 from config_logger import config_logger, LOG_FORMAT_STRING
@@ -28,7 +29,7 @@ from log_exception import log_exception
 ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '5.4'     # from 3.0 save config to properties removed (unsafe)
+APPLICATION_VERSION = '5.5'     # from 3.0 save config to properties removed (unsafe)
                                 # from 4.0 TangoServerPrototype.devices is dictionary
 LOG_LIST_LENGTH = 500
 
@@ -194,6 +195,20 @@ class TangoServerPrototype(Device):
         self.write_log_level(level)
         msg = 'Log level has been set to %s' % self.read_log_level()
         self.log_debug(msg)
+
+    @command(dtype_in=None)
+    def open_url(self):
+        if 'ip' in self.properties:
+            ip = self.properties.get('ip')
+            pw = self.properties.get('password', '')
+            us = self.properties.get('user', '')
+            self.log_debug('ip =%s, user=%s, password=%s', ip, us, pw)
+            if us and pw:
+                ip = us + ':' + pw + '@' + ip
+            if not ip.startswith('http'):
+             ip = 'http://' + ip
+            webbrowser.open_new_tab(ip)
+        self.log_debug('No ip property found')
 
     # ******** additional helper functions ***********
     def save_polling_state(self, target_property='_polled_attr'):
