@@ -196,23 +196,24 @@ class TangoServerPrototype(Device):
         msg = 'Log level has been set to %s' % self.read_log_level()
         self.log_debug(msg)
 
-    @command(dtype_in=None)
+    @command(dtype_in=None, dtype_out=bool)
     def open_url(self):
-        if 'ip' in self.properties:
-            ip = self.properties.get('ip')
-            pw = self.properties.get('password', '')
-            us = self.properties.get('user', '')
-            self.log_debug('ip =%s, user=%s, password=%s', ip, us, pw)
-            if us and pw:
-                ip = us + ':' + pw + '@' + ip
-            if not ip.startswith('http'):
-             ip = 'http://' + ip
-            try:
-                webbrowser.open_new_tab(ip)
-            except:
-                self.log_error('Error opening %s', ip)
-            return
-        self.log_debug('No ip property found')
+        url = ''
+        if 'url' in self.properties:
+            url = self.properties.get('url')
+        else:
+            if 'ip' in self.properties:
+                url = self.properties.get('ip')
+            else:
+                self.log_debug('URL can not be determined')
+                return False
+        self.log_debug('URL =%s', url)
+        try:
+            webbrowser.open_new_tab(url)
+        except:
+            self.log_error('Error opening %s', url)
+            return False
+        return True
 
     # ******** additional helper functions ***********
     def save_polling_state(self, target_property='_polled_attr'):
