@@ -111,7 +111,7 @@ def restore_settings(obj, file_name='config.json', widgets=()):
     return obj.config
 
 
-def save_settings(obj, file_name='config.json', widgets=()):
+def save_settings(obj, file_name='config.json', widgets=None):
     try:
         # save current window size and position
         p = obj.pos()
@@ -119,6 +119,9 @@ def save_settings(obj, file_name='config.json', widgets=()):
         obj.config['main_window'] = {'size': (s.width(), s.height()), 'position': (p.x(), p.y())}
         #
         obj.config['log_level'] = obj.logger.level
+        if widgets is None:
+            all_children = obj.findChildren(QWidget)
+            widgets = all_children
         # get state of widgets
         for w in widgets:
             get_widget_state(w, obj.config)
