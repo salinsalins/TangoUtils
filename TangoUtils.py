@@ -31,30 +31,30 @@ class TangoLogHandler(logging.Handler):
         else:
             self.setFormatter(formatter)
 
-    def emit(self, record):
-        level = self.level
+    def emit(self, record: logging.LogRecord):
+        level = record.levelno
         try:
             if level >= logging.CRITICAL:
                 log_entry = self.format(record)
-                # self.device.fatal_stream(log_entry)
-                self.device.get_logger().fatal(log_entry)
+                self.device.fatal_stream(log_entry)
+                # self.device.get_logger().fatal(log_entry)
             elif level >= logging.WARNING:
                 log_entry = self.format(record)
-                # self.device.error_stream(log_entry)
-                self.device.get_logger().error(log_entry)
+                self.device.error_stream(log_entry)
+                # self.device.get_logger().error(log_entry)
             elif level >= logging.INFO:
                 log_entry = self.format(record)
-                # self.device.info_stream(log_entry)
-                self.device.get_logger().info(log_entry)
+                self.device.info_stream(log_entry)
+                # self.device.get_logger().info(log_entry)
             elif level >= logging.DEBUG:
                 log_entry = self.format(record)
-                # self.device.debug_stream(log_entry)
-                self.device.get_logger().debug(log_entry)
+                self.device.debug_stream(log_entry)
+                # self.device.get_logger().debug(log_entry)
         except KeyboardInterrupt:
             raise
-        except:
+        # except:
             # sometimes unexpected (reason?) "no RTTI data" exception occurs
-            pass
+            # pass
 
 
 def get_display_units(dp: tango.DeviceProxy, attrib_name: str):
@@ -261,8 +261,8 @@ class TangoName:
 
 
 class TangoProperties:
-    #   dict like interface for Tango device attribute properties;
-    #   properties = TangoDeviceAttributeProperties(device_name, attribute_name)
+    #   dict like interface for Tango properties;
+    #   properties = TangoProperties()
     #   property_value = properties[property_name]
     #       property_value is a list['str'] or [] if property_name is absent
     #       to get single value it is necessary to add [0] : a =  properties['b'][0]
