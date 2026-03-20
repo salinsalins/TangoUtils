@@ -1,0 +1,10 @@
+<RCC>
+  <qresource>
+    <file>checked_black.png</file>
+    <file>checked_blue.png</file>
+    <file>checked_red.png</file>
+    <file>unchecked_black.png</file>
+    <file>unchecked_blue.png</file>
+    <file>unchecked_red.png</file>
+  </qresource>
+</RCC>

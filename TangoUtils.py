@@ -261,11 +261,13 @@ class TangoName:
 
 
 class TangoProperties:
-    #   dict like interface for Tango properties;
+    #   dictionary like interface for Tango properties;
     #   properties = TangoProperties()
+    #   GET:
     #   property_value = properties[property_name]
     #       property_value is a list['str'] or [] if property_name is absent
     #       to get single value it is necessary to add [0] : a =  properties['b'][0]
+    #   SET:
     #   properties[property_name] = new_property_value
     def __init__(self):
         self.db = tango.Database()
