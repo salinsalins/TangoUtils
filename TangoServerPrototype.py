@@ -217,6 +217,7 @@ class TangoServerPrototype(Device):
 
     # ******** additional helper functions ***********
     def save_polling_state(self, target_property='_polled_attr'):
+        self.save_da_polling()
         self.config[target_property] = []
         pv = self.properties.get('polled_attr', [])
         result = []
@@ -248,36 +249,33 @@ class TangoServerPrototype(Device):
                 self.init_po = False
             return False
 
-    def save_da_polling(self, target_property='_polled_dynamic_attr'):
-        # self.config[target_property] = []
-        pv = self.properties.get('polled_attr', [])
-        result = []
-        i = 0
-        while i < len(pv)-1:
-            if pv[i] in self.dynamic_attributes:
-                try:
-                    v = int(pv[i + 1])
-                    result.append(pv[i])
-                    result.append(pv[i + 1])
-                    i += 1
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    self.log_exception(f'Wrong record in polled_attr {pv[i]}')
-            i += 1
-        if result:
-            # write target_property  to device properties
-            self.properties[target_property] = result
-            self.log_debug(f'Polling state {result} saved to {target_property}')
-            return True
-        else:
-            if pv:
-                # py is not empty, target_property last value preserved
-                self.log_info(f'Wrong format for polled_attr {pv}, save ignored')
-            else:
-                # pv is empty, target_property deleted
-                del self.properties[target_property]
-            return False
+    def save_da_polling(self):
+        # self.logger.debug('entry')
+        polled = self.properties.get('polled_attr', [])
+        # self.logger.debug('mark')
+        for name in self.dynamic_attributes:
+            try:
+                i = polled.index(name)
+                value = int(polled[i+1])
+                self.set_attribute_property(name, 'polling', str(value))
+                self.log_debug(f'Polling state {value} saved for {name}')
+            except KeyboardInterrupt:
+                raise
+            except ValueError:
+                pass
+            except:
+                self.log_exception(f'Error saving polling for {name}')
+
+    def save_attribute_property(self, attr: str, prop: str):
+        try:
+            _prop = '_' + prop
+            value = self.set_attribute_property(attr, prop)
+            self.set_attribute_property(attr, _prop, str(value))
+            self.log_debug(f'Property {prop} for {attr} saved to {_prop}')
+        except KeyboardInterrupt:
+            raise
+        except:
+            self.log_exception(f'Error saving {prop} for {attr}')
 
     def get_saved_polling_period(self, attr_name, prop_name='_polled_attr'):
         try:
@@ -332,33 +330,32 @@ class TangoServerPrototype(Device):
             # self.delete_device_property(prop_name)
             self.init_po = False
 
-#    NOT working because all attribute properties are deleted if dynamic attribute deleted
-# # new format for polling property at the attribute
-#         for name in self.dynamic_attributes:
-#             if name in restored:
-#                 continue
-#             try:
-#                 value = int(self.get_attribute_property(name, 'polling'))
-#                 if value > 0:
-#                     self.poll_attribute(name, value)
-#                     # workaround to prevent tango feature
-#                     time.sleep(self.POLLING_ENABLE_DELAY)
-#                     restored.append(name)
-#                     self.log_debug(f'Polling {value} for {name} has been restored')
-#                 else:
-#                     restored_with_errors.append(name)
-#             except KeyboardInterrupt:
-#                 raise
-#             except ValueError:
-#                 continue
-#             except KeyError:
-#                 continue
-#             except:
-#                 self.log_exception('Polling restore exception')
-#                 restored_with_errors.append(name)
-#                 continue
-#         if restored_with_errors:
-#             self.log_info(f'Polling can not be restored for {restored_with_errors}')
+# new format for polling property at the attribute
+        for name in self.dynamic_attributes:
+            if name in restored:
+                continue
+            try:
+                value = int(self.get_attribute_property(name, 'polling'))
+                if value > 0:
+                    dp.poll_attribute(name, value)
+                    # workaround to prevent tango feature
+                    time.sleep(self.POLLING_ENABLE_DELAY)
+                    restored.append(name)
+                    self.log_debug(f'Polling {value} for {name} has been restored')
+                else:
+                    restored_with_errors.append(name)
+            except KeyboardInterrupt:
+                raise
+            except ValueError:
+                continue
+            except KeyError:
+                continue
+            except:
+                self.log_exception('Polling restore exception')
+                restored_with_errors.append(name)
+                continue
+        if restored_with_errors:
+            self.log_info(f'Polling can not be restored for {restored_with_errors}')
 
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         if hasattr(self, 'pre'):
