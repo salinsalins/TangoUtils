@@ -1,0 +1,6 @@
+<RCC>
+  <qresource>
+    <file>checkBoxRedChecked.png</file>
+    <file>checkBoxRedUnchecked.png</file>
+  </qresource>
+</RCC>

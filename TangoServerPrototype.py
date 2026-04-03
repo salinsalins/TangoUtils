@@ -200,10 +200,10 @@ class TangoServerPrototype(Device):
     def open_url(self):
         url = ''
         if 'url' in self.properties:
-            url = self.properties.get('url')
+            url = self.properties.get('url')[0]
         else:
             if 'ip' in self.properties:
-                url = self.properties.get('ip')
+                url = self.properties.get('ip')[0]
             else:
                 self.log_debug('URL can not be determined')
                 return False
@@ -294,37 +294,71 @@ class TangoServerPrototype(Device):
     def restore_polling(self, attr_name=None, prop_name='_polled_attr'):
         if not (hasattr(self, 'init_po') and self.init_po):
             return
+        restored_with_errors = []
+        restored = []
         try:
             dp = tango.DeviceProxy(self.get_name())
-            pa = self.properties.get(prop_name)
-            rpl = []
+            name_value_list = self.properties.get(prop_name, [])
             for name in self.dynamic_attributes:
                 if attr_name is None or attr_name == name:
                     try:
-                        i = pa.index(name)
-                        pp = int(pa[i + 1])
+                        i = name_value_list.index(name)
+                        value = int(name_value_list[i + 1])
+                        if value > 0:
+                            # self.poll_attribute(name, value)
+                            dp.poll_attribute(name, value)
+                            # workaround to prevent tango feature
+                            time.sleep(self.POLLING_ENABLE_DELAY)
+                            restored.append(name)
+                            self.log_debug(f'Polling {value} for {name} has been restored')
+                        else:
+                            restored_with_errors.append(name)
                     except KeyboardInterrupt:
                         raise
-                    except:
+                    except ValueError:
                         continue
-                    if pp > 0:
-                        time.sleep(self.POLLING_ENABLE_DELAY)
-                        time.sleep(self.POLLING_ENABLE_DELAY)
-                        dp.poll_attribute(name, pp)
-                        # workaround to prevent tango feature
-                        time.sleep(self.POLLING_ENABLE_DELAY)
-                        time.sleep(self.POLLING_ENABLE_DELAY)
-                        rpl.append(name)
-                        self.log_debug(f'Polling {pp} for {name} has been restored')
-            if rpl:
-                self.log_info(f'Polling has been restored for {rpl}')
+                    except:
+                        log_exception()
+                        restored_with_errors.append(name)
+                        continue
+            if restored_with_errors:
+                self.log_info(f'Polling can not be restored for {restored_with_errors}')
         except KeyboardInterrupt:
             raise
         except:
             self.log_exception('Polling restore exception')
             return
         if attr_name is None:
+            # self.delete_device_property(prop_name)
             self.init_po = False
+
+#    NOT working because all attribute properties are deleted if dynamic attribute deleted
+# # new format for polling property at the attribute
+#         for name in self.dynamic_attributes:
+#             if name in restored:
+#                 continue
+#             try:
+#                 value = int(self.get_attribute_property(name, 'polling'))
+#                 if value > 0:
+#                     self.poll_attribute(name, value)
+#                     # workaround to prevent tango feature
+#                     time.sleep(self.POLLING_ENABLE_DELAY)
+#                     restored.append(name)
+#                     self.log_debug(f'Polling {value} for {name} has been restored')
+#                 else:
+#                     restored_with_errors.append(name)
+#             except KeyboardInterrupt:
+#                 raise
+#             except ValueError:
+#                 continue
+#             except KeyError:
+#                 continue
+#             except:
+#                 self.log_exception('Polling restore exception')
+#                 restored_with_errors.append(name)
+#                 continue
+#         if restored_with_errors:
+#             self.log_info(f'Polling can not be restored for {restored_with_errors}')
 
     def log_exception(self, message='', *args, level=logging.ERROR, **kwargs):
         if hasattr(self, 'pre'):
@@ -386,7 +420,17 @@ class TangoServerPrototype(Device):
         except:
             self.log_exception(f'Error writing property {prop}')
 
-    def get_attribute_property(self, attr_name, prop_name=None):
+    def delete_device_property(self, prop: str):
+        prop = str(prop)
+        try:
+            db = tango.Database()
+            db.delete_device_property(self.get_name(), prop)
+        except KeyboardInterrupt:
+            raise
+        except:
+            self.log_exception(f'Error deleting property {prop}')
+
+    def get_attribute_property(self, attr_name: str, prop_name:str = None):
         db = tango.Database()
         # db = self.device_proxy.get_device_db()
         apr = db.get_device_attribute_property(self.get_name(), attr_name)
@@ -592,7 +636,8 @@ class DequeLogHandler(logging.Handler):
 
 
 if __name__ == "__main__":
+    print('Do not run TangoServerPrototype device directly')
     # TangoServerPrototype.run_server(post_init_callback=post_init_callback)
     # TangoServerPrototype.run_server(post_init_callback=post_init_callback, event_loop=looping)
     # TangoServerPrototype.run_server(event_loop=looping)
-    TangoServerPrototype.run_server()
+    # TangoServerPrototype.run_server()
