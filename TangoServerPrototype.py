@@ -308,8 +308,11 @@ class TangoServerPrototype(Device):
                     except:
                         continue
                     if pp > 0:
+                        time.sleep(self.POLLING_ENABLE_DELAY)
+                        time.sleep(self.POLLING_ENABLE_DELAY)
                         dp.poll_attribute(name, pp)
                         # workaround to prevent tango feature
+                        time.sleep(self.POLLING_ENABLE_DELAY)
                         time.sleep(self.POLLING_ENABLE_DELAY)
                         rpl.append(name)
                         self.log_debug(f'Polling {pp} for {name} has been restored')
