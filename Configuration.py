@@ -1,8 +1,9 @@
 import json
+from typing import LiteralString
 
 
 class Configuration(dict):
-    def __init__(self, file_name: str = None, default: dict = None):
+    def __init__(self, file_name: str | LiteralString | None = None, default: dict = None):
         if default is None:
             default = {}
         super().__init__(default)
