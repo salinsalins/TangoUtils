@@ -3,11 +3,14 @@ from typing import LiteralString
 
 
 class Configuration(dict):
-    def __init__(self, file_name: str | LiteralString | None = None, default: dict = None):
+    def __init__(self, file_name: str | LiteralString | bytes | None = None, default: dict = None):
         if default is None:
             default = {}
         super().__init__(default)
-        self.file_name = file_name
+        if type(file_name) is bytes:
+            self.file_name = file_name.decode()
+        else:
+            self.file_name = file_name
         self.read()
 
     def get(self, key, default=None):
