@@ -9,10 +9,12 @@ import config_logger
 def exception_short_info():
     ex_type, ex_value, traceback = sys.exc_info()
     if ex_type:
-        if hasattr(ex_value.args[0], 'desc'):
-            txt = ex_value.args[0].desc
-        else:
-            txt = str(ex_value.args[0])
+        txt = ''
+        for arg in ex_value.args:
+            if hasattr(arg, 'desc'):
+                txt += arg.desc + '; '
+            else:
+                txt += str(arg) + '; '
         return ' %s %s' % (ex_type.__name__, txt)
     else:
         return 'Unknown exception'
@@ -30,9 +32,6 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
     info1 = 'Exception Info can not be determined'
     ex_type, ex_value, tb = sys.exc_info()
     try:
-        info1 = exception_short_info()
-        #
-        message += info1
         try:
             message = message % args
         except KeyboardInterrupt:
@@ -40,7 +39,10 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
         except:
             message += 'Args parse error ' + str(args)
             message = message.replace('%', '_')
-        #
+
+        info1 = exception_short_info()
+        message += " " + info1
+
         if logger is None or isinstance(logger, str):
             temp = inspect.stack()[1].frame.f_locals
             if 'self' in temp:
@@ -65,7 +67,7 @@ def log_exception(logger=None, message=None, *args, level=logging.ERROR, **kwarg
             exc_info = not kwargs.pop('no_info', True)
         else:
             exc_info = kwargs.pop('exc_info', True)
-        message += " " + info1
+        # message += " " + info1
         kwargs['exc_info'] = exc_info
         logger.log(level, message, **kwargs)
         # if exc_info:
