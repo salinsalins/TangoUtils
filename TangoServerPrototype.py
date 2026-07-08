@@ -378,14 +378,26 @@ class TangoServerPrototype(Device):
     def log_debug(self, message='', *args, **kwargs):
         self._log(logging.DEBUG, message, *args, **kwargs)
 
+    def debug(self, *args, **kwargs):
+        self.log_debug(*args, **kwargs)
+
     def log_info(self, message='', *args, **kwargs):
         self._log(logging.INFO, message, *args, **kwargs)
+
+    def info(self, *args, **kwargs):
+        self.log_info(*args, **kwargs)
 
     def log_warning(self, message='', *args, **kwargs):
         self._log(logging.WARNING, message, *args, **kwargs)
 
+    def warning(self, *args, **kwargs):
+        self.log_warning(*args, **kwargs)
+
     def log_error(self, message='', *args, **kwargs):
         self._log(logging.ERROR, message, *args, **kwargs)
+
+    def error(self, *args, **kwargs):
+        self.log_error(*args, **kwargs)
 
     def get_device_property(self, prop: str, default=None):
         try:
