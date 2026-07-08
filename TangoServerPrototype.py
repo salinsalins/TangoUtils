@@ -399,6 +399,9 @@ class TangoServerPrototype(Device):
     def error(self, *args, **kwargs):
         self.log_error(*args, **kwargs)
 
+    def get_attribute_list(self):
+        self.attribute_list = self.attribute_list_query_ex()
+
     def get_device_property(self, prop: str, default=None):
         try:
             db = tango.Database()
