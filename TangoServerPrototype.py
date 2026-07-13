@@ -379,24 +379,28 @@ class TangoServerPrototype(Device):
         self._log(logging.DEBUG, message, *args, **kwargs)
 
     def debug(self, *args, **kwargs):
+        kwargs['stacklevel'] = 2
         self.log_debug(*args, **kwargs)
 
     def log_info(self, message='', *args, **kwargs):
         self._log(logging.INFO, message, *args, **kwargs)
 
     def info(self, *args, **kwargs):
+        kwargs['stacklevel'] = 2
         self.log_info(*args, **kwargs)
 
     def log_warning(self, message='', *args, **kwargs):
         self._log(logging.WARNING, message, *args, **kwargs)
 
     def warning(self, *args, **kwargs):
+        kwargs['stacklevel'] = 2
         self.log_warning(*args, **kwargs)
 
     def log_error(self, message='', *args, **kwargs):
         self._log(logging.ERROR, message, *args, **kwargs)
 
     def error(self, *args, **kwargs):
+        kwargs['stacklevel'] = 2
         self.log_error(*args, **kwargs)
 
     def set_write_attribute_defaults(self):
