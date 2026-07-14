@@ -76,7 +76,7 @@ class ModbusDevice:
             return
         self.id = 'Modbus device'
         self.pre = f'{self.id} at {self.port}: {self.addr} '
-        self.debug(f'has been initialized')
+        self.info(f'has been initialized')
         return
 
     def __del__(self):
@@ -91,7 +91,7 @@ class ModbusDevice:
             if self in ModbusDevice._devices:
                 self.close_com_port()
                 ModbusDevice._devices.remove(self)
-                self.debug('has been removed')
+                self.info('has been removed')
 
     def debug(self, msg, *args, **kwargs):
         sl = kwargs.pop('stacklevel', 1)
@@ -152,61 +152,66 @@ class ModbusDevice:
             cmd = cmd.encode()
         if not isinstance(cmd, bytes):
             return False
-        self.error = 0
-        self.com.reset_input_buffer()
-        self.com.reset_output_buffer()
-        self.com.read()
-        # while self.com.in_waiting > 0:
-        #     self.com.read()
-        cmd = self.add_checksum(cmd)
-        self.request = cmd
-        n = self.com.write(cmd)
-        if len(cmd) != n:
-            self.error = 263
-            self.suspend()
-            return False
-        return True
+        with self.com.lock:
+            self.error = 0
+            self.com.reset_input_buffer()
+            self.com.reset_output_buffer()
+            self.com.read()
+            self.com.read()
+            # while self.com.in_waiting > 0:
+            #     self.com.read()
+            cmd = self.add_checksum(cmd)
+            self.request = cmd
+            n = self.com.write(cmd)
+            if len(cmd) != n:
+                self.error = 263
+                self.suspend()
+                return False
+            return True
 
     def read(self, extra_bytes=5) -> bool:
-        if not self.ready:
-            self.error = 262
-            return False
-        self.error = 0
-        self.response = b''
-        self.read_timeout = time.time() + self.READ_TIMEOUT
-        while time.time() < self.read_timeout and len(self.response) < 3:
-            self.response += self.com.read(1000)
-        # read timeout
-        if time.time() >= self.read_timeout:
-            self.error = 259
-            self.suspend()
-            return False
-        # addr check
-        if int(self.response[0]) != self.addr:
-            self.error = 260
-            return False
-        # op code check
-        op = int(self.response[1])
-        if op != self.command and op != (self.command + 128):
-            self.error = 261
-            return False
-        # calculate expected length of input
-        if op > 128:
-            # 5 bytes for error response
-            k = 5
-        elif op > 4 and op < 17:
-            # single-byte operations
-            k = 8
-        else:
-            # multi-byte operations
-            k = int(self.response[2]) + extra_bytes
-        # wait for next bytes
-        while time.time() < self.read_timeout and len(self.response) < k:
-            self.response += self.com.read(1000)
-        if time.time() >= self.read_timeout:
-            self.error = 259
-            self.suspend()
-            return False
+        with self.com.lock:
+            if not self.ready:
+                self.error = 262
+                return False
+            self.error = 0
+            self.response = b''
+            self.read_timeout = time.time() + self.READ_TIMEOUT
+            while time.time() < self.read_timeout and len(self.response) < 3:
+                self.response += self.com.read(1000)
+            # read timeout
+            if time.time() >= self.read_timeout:
+                self.error = 259
+                self.suspend()
+                return False
+            # addr check
+            if int(self.response[0]) != self.addr:
+                self.error = 260
+                return False
+            # op code check
+            op = int(self.response[1])
+            if op != self.command and op != (self.command + 128):
+                self.error = 261
+                self.logger.error(f'OP code != self.command {self.response} {self.command}')
+                return False
+            # calculate expected length of input
+            if op > 128:
+                # 5 bytes for error response
+                k = 5
+            elif op > 4 and op < 17:
+                # single-byte operations
+                k = 8
+            else:
+                # multi-byte operations
+                k = int(self.response[2]) + extra_bytes
+            # wait for next bytes
+            with self.com.lock:
+                while time.time() < self.read_timeout and len(self.response) < k:
+                    self.response += self.com.read(1000)
+                if time.time() >= self.read_timeout:
+                    self.error = 259
+                    self.suspend()
+                    return False
         return self.check_response(self.response)
 
     def check_response(self, cmd: bytes) -> bool:
@@ -227,52 +232,58 @@ class ModbusDevice:
         return self.verify_checksum(cmd)
 
     def modbus_read(self, start: int, length: int=1, address=None, command=3):
-        self.command = command
-        if address is None:
-            address = self.addr
-        msg = address.to_bytes(1, byteorder='big') + self.command.to_bytes(1, byteorder='big')
-        msg += int.to_bytes(start, 2, byteorder='big')
-        msg += int.to_bytes(length, 2, byteorder='big')
-        data = []
-        if not self.write(msg):
-            return data
-        if not self.read():
-            return data
-        for i in range(length):
-            data.append(int.from_bytes(self.response[2 * i + 3:2 * i + 5], byteorder='big'))
+        with self.com.lock:
+            self.command = command
+            if address is None:
+                address = self.addr
+            msg = address.to_bytes(1, byteorder='big') + self.command.to_bytes(1, byteorder='big')
+            msg += int.to_bytes(start, 2, byteorder='big')
+            msg += int.to_bytes(length, 2, byteorder='big')
+            data = []
+            if not self.write(msg):
+                return data
+            if not self.read():
+                return data
+            for i in range(length):
+                data.append(int.from_bytes(self.response[2 * i + 3:2 * i + 5], byteorder='big'))
         return data
 
     def modbus_write(self, start: int, data, address=None, command=16) -> int:
-        if isinstance(data, int):
-            data = [data,]
-        try:
-            if len(data) <= 0:
+        # print('modbus_write', start, data)
+        with self.com.lock:
+            if isinstance(data, int):
+                data = [data,]
+            try:
+                if len(data) <= 0:
+                    return 0
+            except:
                 return 0
-        except:
-            return 0
-        self.command = command
-        if address is None:
-            address = self.addr
-        msg = address.to_bytes(1, byteorder='big') + self.command.to_bytes(1, byteorder='big')
-        msg += int.to_bytes(start, 2, byteorder="big")
-        out = b''
-        for d in data:
-            if isinstance(d, int):
-                out += d.to_bytes(2, byteorder='big')
-            elif isinstance(d, bytes):
-                out += d
-            else:
-                self.debug('Wrong data format for write')
-                return 0
-        length = len(out)
-        msg += int.to_bytes(length // 2, 2, byteorder="big")
-        msg += int.to_bytes(length, 1, byteorder='big')
-        msg += out
-        if not self.write(msg):
-            return 0
-        if not self.read():
-            return 0
-        data = int.from_bytes(self.response[4:6], byteorder='big')
+            self.command = command
+            if address is None:
+                address = self.addr
+            msg = address.to_bytes(1, byteorder='big') + self.command.to_bytes(1, byteorder='big')
+            msg += int.to_bytes(start, 2, byteorder="big")
+            out = b''
+            for d in data:
+                if isinstance(d, int):
+                    out += d.to_bytes(2, byteorder='big')
+                elif isinstance(d, bytes):
+                    out += d
+                else:
+                    self.error('Wrong data format for write')
+                    return 0
+            length = len(out)
+            msg += int.to_bytes(length // 2, 2, byteorder="big")
+            msg += int.to_bytes(length, 1, byteorder='big')
+            msg += out
+            # print('modbus_write msg', msg)
+            with self.com.lock:
+                if not self.write(msg):
+                    return 0
+                if not self.read():
+                    return 0
+            data = int.from_bytes(self.response[4:6], byteorder='big')
+            # print('modbus_write data', data)
         return data
 
     @property
