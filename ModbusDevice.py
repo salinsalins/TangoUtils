@@ -145,14 +145,14 @@ class ModbusDevice:
         return cmd[-2:] == cs
 
     def write(self, cmd) -> bool:
-        if not self.ready:
-            self.error = 262
-            return False
-        if isinstance(cmd, str):
-            cmd = cmd.encode()
-        if not isinstance(cmd, bytes):
-            return False
         with self.com.lock:
+            if not self.ready:
+                self.error = 262
+                return False
+            if isinstance(cmd, str):
+                cmd = cmd.encode()
+            if not isinstance(cmd, bytes):
+                return False
             self.error = 0
             self.com.reset_input_buffer()
             self.com.reset_output_buffer()
@@ -205,14 +205,14 @@ class ModbusDevice:
                 # multi-byte operations
                 k = int(self.response[2]) + extra_bytes
             # wait for next bytes
-            with self.com.lock:
-                while time.time() < self.read_timeout and len(self.response) < k:
-                    self.response += self.com.read(1000)
-                if time.time() >= self.read_timeout:
-                    self.error = 259
-                    self.suspend()
-                    return False
-        return self.check_response(self.response)
+            while time.time() < self.read_timeout and len(self.response) < k:
+                self.response += self.com.read(1000)
+            if time.time() >= self.read_timeout:
+                self.error = 259
+                self.suspend()
+                return False
+            resp = self.check_response(self.response)
+        return resp
 
     def check_response(self, cmd: bytes) -> bool:
         self.error = 0
@@ -277,11 +277,10 @@ class ModbusDevice:
             msg += int.to_bytes(length, 1, byteorder='big')
             msg += out
             # print('modbus_write msg', msg)
-            with self.com.lock:
-                if not self.write(msg):
-                    return 0
-                if not self.read():
-                    return 0
+            if not self.write(msg):
+                return 0
+            if not self.read():
+                return 0
             data = int.from_bytes(self.response[4:6], byteorder='big')
             # print('modbus_write data', data)
         return data
