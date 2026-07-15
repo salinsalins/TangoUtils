@@ -189,7 +189,7 @@ def save_settings(self, widgets=(), file_name='config.json'):
         # save current window size and position
         p = self.pos()
         s = self.size()
-        self.config['main_window'] = {'size': (s.width(), s.height()), 'position': (p.x(), p.y())}
+        self.config['main_window'].update({'size': (s.width(), s.height()), 'position': (p.x(), p.y())})
         # get state of widgets
         for w in widgets:
             get_widget_state(w, self.config)
