@@ -84,9 +84,7 @@ class ComPort:
             self.logger.info(f'{self.port} New port is not ready')
 
     def __del__(self):
-        # self.open_counter = 1
         self.close()
-        # ComPort._ports.pop(self.port, None)
 
     def create_port(self):
         with self.lock:
@@ -139,7 +137,6 @@ class ComPort:
                     self.open_counter = 0
                     if self.device.isOpen():
                         self.device.close()
-                        # ComPort._ports.pop(self.port)
                         if self.device.isOpen():
                             self.logger.debug(f'{self.port} was not closed')
                             return False
