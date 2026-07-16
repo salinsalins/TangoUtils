@@ -38,45 +38,48 @@ class ComPort:
         with ComPort._lock:
             if port in ComPort._ports:
                 p = ComPort._ports[port]
-                if isinstance(p.device, EmptyComPort):
-                    # _v = p.open_counter
-                    p.create_port()
-                    time.sleep(0.05)
-                    # p.open_counter = _v
-                p.open_counter += 1
-                if not p.device.isOpen():
-                    p.device.open()
-                for i in range(10):
-                    time.sleep(0.05)
-                    # p.logger.debug(f'{p.port} Ready: {p.ready}')
-                    if p.ready:
-                        break
-                if p.ready:
-                    p.logger.debug(f'{p.port} Using existing port')
-                else:
-                    p.logger.info(f'{p.port} Existing port is not ready')
-                return
-            # create new device
-            self.port = port
-            self.logger = kwargs.pop('logger', config_logger())
-            self.emulated = kwargs.pop('emulated', None)
-            self.suspend_delay = kwargs.pop('suspend_delay', 5.0)
-            self.args = args
-            self.kwargs = kwargs
-            self.lock = RLock()
-            self.open_counter = 0
-            self.current_addr = -1  # current address for RS485 devices
-            self.used_addr = []  # used addresses list for RS485 devices
-            self.suspend_to = 0.0
-            self.device = None
-            # create new port and add it to list
-            self.create_port()
-            self.open_counter = 1
-            ComPort._ports[self.port] = self
-            if self.ready:
-                self.logger.debug(f'{self.port} has been initialized')
             else:
-                self.logger.info(f'{self.port} New port is not ready')
+                p = None
+        if p is not None:
+            if isinstance(p.device, EmptyComPort):
+                # _v = p.open_counter
+                p.create_port()
+                time.sleep(0.05)
+                # p.open_counter = _v
+            p.open_counter += 1
+            if not p.device.isOpen():
+                p.device.open()
+            for i in range(10):
+                time.sleep(0.05)
+                # p.logger.debug(f'{p.port} Ready: {p.ready}')
+                if p.ready:
+                    break
+            if p.ready:
+                p.logger.debug(f'{p.port} Using existing port')
+            else:
+                p.logger.info(f'{p.port} Existing port is not ready')
+            return
+        # create new device
+        self.port = port
+        self.logger = kwargs.pop('logger', config_logger())
+        self.emulated = kwargs.pop('emulated', None)
+        self.suspend_delay = kwargs.pop('suspend_delay', 5.0)
+        self.args = args
+        self.kwargs = kwargs
+        self.lock = RLock()
+        self.open_counter = 0
+        self.current_addr = -1  # current address for RS485 devices
+        self.used_addr = []  # used addresses list for RS485 devices
+        self.suspend_to = 0.0
+        self.device = None
+        # create new port and add it to list
+        self.create_port()
+        self.open_counter = 1
+        ComPort._ports[self.port] = self
+        if self.ready:
+            self.logger.debug(f'{self.port} has been initialized')
+        else:
+            self.logger.info(f'{self.port} New port is not ready')
 
     def __del__(self):
         # self.open_counter = 1
@@ -215,25 +218,31 @@ class ComPort:
             self.suspend_to = 0.0
             # if self.device.isOpen():
             #     return True
-            with ComPort._lock:
-                try:
-                    if isinstance(self.device, EmptyComPort):
-                        self.create_port()
-                    else:
-                        self.device.close()
-                        self.device.open()
-                    if self.device.isOpen():
-                        self.logger.debug(f'{self.port} reopened')
-                        return True
-                    self.suspend()
-                    self.logger.debug(f'{self.port} reopen failed')
-                    return False
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    log_exception(self.logger, f'{self.port} reopen exception')
-                    self.suspend()
-                    return False
+            print(f'Mark 27', ComPort._lock.locked())
+            # with ComPort._lock:
+            print(f'Mark 28')
+            try:
+                if isinstance(self.device, EmptyComPort):
+                    self.create_port()
+                else:
+                    print(f'Mark 29')
+                    self.device.close()
+                    print(f'Mark 40')
+                    self.device.open()
+                    print(f'Mark 41')
+                if self.device.isOpen():
+                    print(f'Mark 42')
+                    self.logger.debug(f'{self.port} reopened')
+                    return True
+                self.suspend()
+                self.logger.debug(f'{self.port} reopen failed')
+                return False
+            except KeyboardInterrupt:
+                raise
+            except:
+                log_exception(self.logger, f'{self.port} reopen exception')
+                self.suspend()
+                return False
 
     def suspend(self):
         if self.suspend_to > 0.0:
