@@ -76,7 +76,8 @@ class ComPort:
         # create new port and add it to list
         self.create_port()
         self.open_counter = 1
-        ComPort._ports[self.port] = self
+        with ComPort._lock:
+            ComPort._ports[self.port] = self
         if self.ready:
             self.logger.debug(f'{self.port} has been initialized')
         else:
@@ -219,20 +220,13 @@ class ComPort:
             self.suspend_to = 0.0
             # if self.device.isOpen():
             #     return True
-            print(f'Mark 27', ComPort._lock.locked())
-            # with ComPort._lock:
-            print(f'Mark 28')
             try:
                 if isinstance(self.device, EmptyComPort):
                     self.create_port()
                 else:
-                    print(f'Mark 29')
                     self.device.close()
-                    print(f'Mark 40')
                     self.device.open()
-                    print(f'Mark 41')
                 if self.device.isOpen():
-                    print(f'Mark 42')
                     self.logger.debug(f'{self.port} reopened')
                     return True
                 self.suspend()
