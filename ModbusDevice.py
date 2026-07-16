@@ -246,7 +246,7 @@ class ModbusDevice:
                 return data
             for i in range(length):
                 data.append(int.from_bytes(self.response[2 * i + 3:2 * i + 5], byteorder='big'))
-        return data
+            return data
 
     def modbus_write(self, start: int, data, address=None, command=16) -> int:
         # print('modbus_write', start, data)
@@ -270,7 +270,7 @@ class ModbusDevice:
                 elif isinstance(d, bytes):
                     out += d
                 else:
-                    self.error('Wrong data format for write')
+                    self.logger.error('Wrong data format for write')
                     return 0
             length = len(out)
             msg += int.to_bytes(length // 2, 2, byteorder="big")
@@ -283,7 +283,7 @@ class ModbusDevice:
                 return 0
             data = int.from_bytes(self.response[4:6], byteorder='big')
             # print('modbus_write data', data)
-        return data
+            return data
 
     @property
     def ready(self):
@@ -323,9 +323,9 @@ def print_ints(arr, r, base=None):
 
 if __name__ == "__main__":
     print('')
-    devices = {'CKD': {'port': "COM10", 'addr': 1, 'baudrate': 57600, 'parity': 'E'},
-               'LAUDA': {'port': "192.168.1.204", 'addr': 5, 'baudrate': 38400}
-               }
+    # devices = {'CKD': {'port': "COM10", 'addr': 1, 'baudrate': 57600, 'parity': 'E'},
+    #            'LAUDA': {'port': "192.168.1.204", 'addr': 5, 'baudrate': 38400}
+    #            }
 
     # CKD modbus device
     md1 = ModbusDevice("COM10", 1, baudrate=57600, parity='E')
@@ -349,6 +349,7 @@ if __name__ == "__main__":
         print('')
         oa = []
         n = 0
+        j = 0
         for i in md1.response:
             if n % 2 == 0:
                 j = i

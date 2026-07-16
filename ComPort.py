@@ -1,9 +1,10 @@
 import logging
+import os
 import sys
 
 from serial import SerialException
 
-if '../TangoUtils' not in sys.path: sys.path.append('../TangoUtils')
+if os.path.realpath('../TangoUtils') not in sys.path: sys.path.append(os.path.realpath('../TangoUtils'))
 
 import inspect
 import time
