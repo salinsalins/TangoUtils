@@ -42,7 +42,6 @@ class MoxaTCPComPort:
         self.close()
 
     def open(self):
-        print(f'Mark 30')
         self.error = False
         try:
             create_timeout = self.kwargs.get('create_timeout', MoxaTCPComPort.CREATE_TIMEOUT)
@@ -54,7 +53,6 @@ class MoxaTCPComPort:
         except KeyboardInterrupt:
             raise
         except:
-            print(f'Mark 31')
             log_exception(f'{self.pre} Socket open exception')
             self.socket = None
             self.error = True
