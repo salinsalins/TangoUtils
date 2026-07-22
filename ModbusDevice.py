@@ -155,6 +155,8 @@ class ModbusDevice:
         with self.com.lock:
             if not self.ready:
                 self.error = 262
+                if self.not_ready_sleep > 0.0:
+                    time.sleep(self.not_ready_sleep)
                 return False
             if isinstance(cmd, str):
                 cmd = cmd.encode()
@@ -187,8 +189,8 @@ class ModbusDevice:
         with self.com.lock:
             if not self.ready:
                 self.error = 262
-                # if self.not_ready_sleep > 0.0:
-                #     time.sleep(self.not_ready_sleep)
+                if self.not_ready_sleep > 0.0:
+                    time.sleep(self.not_ready_sleep)
                 return False
             self.error = 0
             self.response = b''
