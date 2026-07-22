@@ -34,6 +34,7 @@ class ModbusDevice:
 
     def __init__(self, port: str, addr: int, **kwargs):
         # default com port, id, serial number, and ...
+        self.not_ready_sleep = 0.5
         self.com = EmptyComPort()
         self.id = 'Unknown Device'
         self.sn = ''
@@ -169,10 +170,19 @@ class ModbusDevice:
                 return False
             return True
 
+    def read_witn_timeout(self, timeout, length) -> bool:
+        while time.time() < timeout and len(self.response) < length:
+            self.response += self.com.read(1000)
+        if time.time() >= timeout:
+            return False
+        return True
+
     def read(self, extra_bytes=5) -> bool:
         with self.com.lock:
             if not self.ready:
                 self.error = 262
+                # if self.not_ready_sleep > 0.0:
+                #     time.sleep(self.not_ready_sleep)
                 return False
             self.error = 0
             self.response = b''
@@ -212,7 +222,7 @@ class ModbusDevice:
                 self.suspend()
                 return False
             resp = self.check_response(self.response)
-        return resp
+            return resp
 
     def check_response(self, cmd: bytes) -> bool:
         self.error = 0
