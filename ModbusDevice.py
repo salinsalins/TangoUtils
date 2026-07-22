@@ -5,6 +5,7 @@ import time
 from threading import Lock
 
 from ComPort import EmptyComPort, ComPort
+from ThreadSafeList import ThreadSafeList
 from config_logger import config_logger
 from log_exception import log_exception
 
@@ -31,10 +32,15 @@ class ModbusDevice:
     _lock = Lock()
     SUSPEND_DELAY = 5.0
     READ_TIMEOUT = 1.0
+    INIT_SLEEP = 0.5
+    NOT_READY_SLEEP = 0.5
 
     def __init__(self, port: str, addr: int, **kwargs):
         # default com port, id, serial number, and ...
-        self.not_ready_sleep = 0.5
+        self.not_ready_sleep = kwargs.pop('not_ready_sleep', ModbusDevice.NOT_READY_SLEEP)
+        self.init_sleep = kwargs.pop('init_sleep', ModbusDevice.INIT_SLEEP)
+        if self.init_sleep> 0.0:
+            time.sleep(self.init_sleep)
         self.com = EmptyComPort()
         self.id = 'Unknown Device'
         self.sn = ''
