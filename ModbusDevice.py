@@ -83,7 +83,7 @@ class ModbusDevice:
             return
         self.id = 'Modbus device'
         self.pre = f'{self.id} at {self.port}: {self.addr} '
-        self.info(f'has been initialized')
+        self.info(f'initialized')
         return
 
     def __del__(self):
