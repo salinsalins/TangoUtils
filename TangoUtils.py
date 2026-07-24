@@ -124,6 +124,8 @@ def convert_polling_status2(status_string_array: str, name: str = ''):
                 if ss[i].startswith(s2):
                     result[n]['buffer_depth'] = int(ss[i].replace(s2, ''))
                     i += 1
+        else:
+            i += 1
     return result
 
 

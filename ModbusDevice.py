@@ -197,6 +197,7 @@ class ModbusDevice:
             self.read_timeout = time.time() + self.READ_TIMEOUT
             while time.time() < self.read_timeout and len(self.response) < 3:
                 self.response += self.com.read(1000)
+                time.sleep(0.001)
             # read timeout
             if time.time() >= self.read_timeout:
                 self.error = 259
