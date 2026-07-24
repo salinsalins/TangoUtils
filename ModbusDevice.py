@@ -181,6 +181,7 @@ class ModbusDevice:
     def read_witn_timeout(self, timeout, length) -> bool:
         while time.time() < timeout and len(self.response) < length:
             self.response += self.com.read(1000)
+            time.sleep(0.001)
         if time.time() >= timeout:
             return False
         return True
@@ -226,6 +227,7 @@ class ModbusDevice:
             # wait for next bytes
             while time.time() < self.read_timeout and len(self.response) < k:
                 self.response += self.com.read(1000)
+                time.sleep(0.001)
             if time.time() >= self.read_timeout:
                 self.error = 259
                 self.suspend()
