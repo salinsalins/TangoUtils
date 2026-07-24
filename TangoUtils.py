@@ -114,7 +114,7 @@ def convert_polling_status2(status_string_array: str, name: str = ''):
     i = 0
     while i < len(ss):
         if ss[i].startswith(s0):
-            n = ss[i].replace(s0, '')
+            n = ss[i].replace(s0, '').strip()
             if not name or name == n:
                 result[n] = {}
                 i += 1
