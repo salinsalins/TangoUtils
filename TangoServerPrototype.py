@@ -133,7 +133,7 @@ class TangoServerPrototype(Device):
     def set_config(self):
         return
 
-    # ******** attribute r/w procedures ***********
+    # region ******** attribute r/w procedures ***********
     # def read_file_modified_time(self):
     #     return FMTS
 
@@ -192,8 +192,9 @@ class TangoServerPrototype(Device):
         if attr is not None:
             attr.set_value(v)
         return v
+    # endregion ******** attribute r/w procedures ***********
 
-    # ******** commands ***********
+    # region ******** commands ***********
     @command(dtype_in=int)
     def set_log_level(self, level):
         self.write_log_level(level)
@@ -218,6 +219,7 @@ class TangoServerPrototype(Device):
             self.log_error('Error opening %s', url)
             return False
         return True
+    # endregion ******** commands ***********
 
     # ******** additional helper functions ***********
     def save_polling_state(self, target_property='_polled_attr'):
