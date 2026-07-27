@@ -20,17 +20,21 @@ from tango import AttrWriteType, DispLevel, DevState
 from tango.server import Device, attribute, command
 import webbrowser
 
+from ThreadSafeDict import ThreadSafeDict
+
 if os.path.realpath('../TangoUtils') not in sys.path: sys.path.append(os.path.realpath('../TangoUtils'))
 from Configuration import Configuration
 from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties
 from config_logger import config_logger, LOG_FORMAT_STRING
 from log_exception import log_exception
 
-ORGANIZATION_NAME = 'BINP'
 APPLICATION_NAME = 'Python Prototype Tango Server'
 APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '5.5'     # from 3.0 save config to properties removed (unsafe)
+APPLICATION_VERSION = '6.0'     # from 3.0 save config to properties removed (unsafe)
                                 # from 4.0 TangoServerPrototype.devices is dictionary
+                                # from 6.0 TangoServerPrototype.devices is ThreadSafeDict
+                                #   file_modified time excluded from attributes
+                                #   because it varies at different locations of repository
 LOG_LIST_LENGTH = 500
 
 FMT = os.path.getmtime(__file__)
@@ -41,16 +45,16 @@ class TangoServerPrototype(Device):
     # ******** class variables ***********
     server_version_value = APPLICATION_VERSION + ' ' + FMTS
     server_name_value = APPLICATION_NAME_SHORT
-    devices = {}
+    devices = ThreadSafeDict()
     POLLING_ENABLE_DELAY = 0.2
     DO_NOT_USE_PROPERTIES = ('polled_attr', '_polled_attr')
 
     # ******** attributes ***********
-    file_modified_time = attribute(label="file_modified_time", dtype=str,
-                               display_level=DispLevel.EXPERT,
-                               access=AttrWriteType.READ,
-                               unit="", format="%s",
-                               doc="Python source file modification time")
+    # file_modified_time = attribute(label="file_modified_time", dtype=str,
+    #                            display_level=DispLevel.EXPERT,
+    #                            access=AttrWriteType.READ,
+    #                            unit="", format="%s",
+    #                            doc="Python source file modification time")
 
     server_version = attribute(label="server_version", dtype=str,
                                display_level=DispLevel.OPERATOR,
@@ -130,8 +134,8 @@ class TangoServerPrototype(Device):
         return
 
     # ******** attribute r/w procedures ***********
-    def read_file_modified_time(self):
-        return FMTS
+    # def read_file_modified_time(self):
+    #     return FMTS
 
     def read_server_version(self):
         return self.server_version_value
@@ -608,8 +612,8 @@ def delete_property_for_server(property_name, server_name=None):
 
 
 def looping():
-    for dev in TangoServerPrototype.devices:
-        pass
+    # for dev in TangoServerPrototype.devices:
+    #     pass
     print('Empty loop. Overwrite or disable.')
     time.sleep(1.0)
     pass
