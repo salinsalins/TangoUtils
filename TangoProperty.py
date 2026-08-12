@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-Prototype for Python based tango device server
-A. L. Sanin, started 04.11.2022
+Tango Properties R/W Friendly Wrapper
+A. L. Sanin
+started 04.11.2022
 """
 
 import logging
@@ -17,10 +18,9 @@ from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties,
 from config_logger import config_logger
 from log_exception import log_exception
 
-ORGANIZATION_NAME = 'BINP'
-APPLICATION_NAME = 'Python Prototype Tango Server'
-APPLICATION_NAME_SHORT = 'Python Prototype Tango Server'
-APPLICATION_VERSION = '2.0'
+APPLICATION_NAME = 'Tango Properties R/W Friendly Wrapper'
+APPLICATION_NAME_SHORT = 'Tango_Properties'
+APPLICATION_VERSION = '1.0'
 
 
 class TangoProperty:
