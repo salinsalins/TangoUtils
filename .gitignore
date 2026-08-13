@@ -2,3 +2,6 @@
 /Sniffer.json
 /Terminal.json
 /__pycache__/
+TangoWidgets/__pycache__/
+TangoWidgets/images/__pycache__/
+.vscode/
