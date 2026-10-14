@@ -49,3 +49,12 @@ class ThreadSafeDict(UserDict):
     def copy(self):
         with self._lock:
             return self.data.copy()
+
+    def __enter__(self):
+        self._lock.acquire()
+        return self.data  # Return the underlying raw dict for direct iteration
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._lock.release()
+
+
