@@ -48,7 +48,7 @@ class ThreadSafeDict(UserDict):
 
     def copy(self):
         with self._lock:
-            return self.data.copy()
+            return UserDict(self.data.copy())
 
     def __enter__(self):
         self._lock.acquire()
