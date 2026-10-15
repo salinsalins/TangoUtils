@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 # Вместо PyQt5 используем PySide6
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QPushButton
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QPushButton
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt import NavigationToolbar2QT as NavigationToolbar
 
@@ -17,6 +17,9 @@ class MainWindow(QMainWindow):
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout(self.central_widget)
+        layout2 = QHBoxLayout()
+        layout2.addWidget(QPushButton("Button 1"))
+        layout2.addWidget(QPushButton("Button 2"))
 
         # 2. Create the Matplotlib Figure and Canvas
         self.figure = plt.figure() # Or use: self.figure, self.ax = plt.subplots()
@@ -33,6 +36,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
         layout.addWidget(self.button)
+        layout.addLayout(layout2)
 
         # Initial plot
         self.plot_data()
