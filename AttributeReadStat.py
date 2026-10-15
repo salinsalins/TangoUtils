@@ -1,15 +1,98 @@
 # coding: utf-8
+"""
+Created on Oct 15, 2026
+
+@author: sanin
+"""
+
 import sys
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 # Вместо PyQt5 используем PySide6
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QHBoxLayout, QVBoxLayout, QPushButton
+from PySide6.QtCore import QTimer, QObject, QThread, Signal, Slot
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt import NavigationToolbar2QT as NavigationToolbar
+from shiboken6 import Shiboken 
+
+import logging
+from config_logger import config_logger
+
+import tango
+
+TIMER_PERIOD = 1000  # ms
+
+# 1. Создаем класс-рабочий (Worker), наследуясь от QObject
+class TaskWorker(QObject):
+    # Сигналы для связи с главным потоком (UI)
+    progress_changed = Signal(int)    # Передает процент выполнения (0-100)
+    task_finished = Signal(str)       # Передает результат по окончании
+    # Сигнал для отправки массива (списка) обратно в UI
+    array_ready = Signal(list)
+
+    def __init__(self, device = "sys/tg_test/1", attribute = "double_scalar"):
+
+        super().__init__()
+        self._is_running = True
+        self.device = device
+        self.atribute = attribute
+        self.dp = tango.DeviceProxy(device)
+        self.n = 5000
+        self.y = np.zeros(self.n)
+        self.tmin = 1e60
+        self.tmax = -1.0
+        self.error_count = 0
+
+    @Slot()
+    def send_current_array(self):
+        """Вызывается в произвольный момент по сигналу из UI"""
+        print('sending data')
+        self.array_ready.emit(self.y)
+
+    @Slot()
+    def run_task(self):
+        """Здесь пишется весь тяжелый код фоновой задачи"""
+        print("Фоновое вычисление началось...")
+
+        i = 0
+        full = False
+        while True:
+            t0 = time.perf_counter()
+            result = self.dp.read_attribute(self.atribute)
+            dt = (time.perf_counter() - t0) * 1000.0
+            # v = result.value
+            self.y[i] = dt
+            i += 1
+            if i >= self.n:
+                i = 0
+                if not full: print('array is full')
+                full = True
+            self.tmin = min(self.tmin, dt)
+            self.tmax = max(self.tmax, dt)
+            if not self._is_running:
+                break
+                
+        # Отправляем сигнал в UI с текущим прогрессом
+        #self.progress_changed.emit(i)
+            
+        if self._is_running:
+            self.task_finished.emit("Вычисления успешно завершены!")
+        else:
+            self.task_finished.emit("Задача была прервана пользователем.")
+
+    def stop(self):
+        self._is_running = False
 
 class MainWindow(QMainWindow):
+    # Сигнал-запрос к воркеру
+    request_array = Signal()
+
     def __init__(self):
         super().__init__()
+
+        self.logger = config_logger(level=logging.DEBUG)
+
         self.setWindowTitle("Matplotlib inside PyQt5 QMainWindow")
         self.resize(800, 600)
 
@@ -39,56 +122,105 @@ class MainWindow(QMainWindow):
         layout.addLayout(layout2)
 
         # Initial plot
-        self.plot_data()
+        self.plot_data([1,2,3])
 
-    def plot_data(self):
+        # Defile and start timer callback task
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.timer_handler)
+        # start timer
+        self.timer.start(TIMER_PERIOD)
+
+        # Шаг А: Создаем поток и рабочего
+        self.thread = QThread()
+        self.worker = TaskWorker()
+
+        # Шаг Б: Переносим рабочего в фоновый поток (Важнейший шаг!)
+        self.worker.moveToThread(self.thread)
+
+        # Шаг В: Связываем сигналы и слоты
+        self.thread.started.connect(self.worker.run_task) # При старте потока запускаем задачу
+        #self.worker.progress_changed.connect(self.update_progress) # Ловим прогресс
+        #self.worker.task_finished.connect(self.on_task_finished)   # Ловим финиш
+
+        # Шаг Г: Правильное удаление объектов из памяти после завершения
+        self.worker.task_finished.connect(self.thread.quit)
+        self.worker.task_finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        # Связываем сигналы запроса и ответа
+        self.request_array.connect(self.worker.send_current_array)
+        self.worker.array_ready.connect(self.plot_data)
+        
+        # Шаг Д: Запускаем поток
+        self.thread.start()
+
+    @Slot(list)
+    def plot_data(self, data):
+        print('plotting data')
         # Clear the old plot before drawing a new one
         self.figure.clear()
 
         # Create an axis and plot data
         ax = self.figure.add_subplot(111)
+        num_bins = 100
+        n, bins, patches = ax.hist(data, num_bins, density=True)
         
-        x = np.linspace(0, 10, 100)
-        y = np.sin(x) + np.random.normal(0, 0.1, 100)
+        #x = np.linspace(0, 10, 100)
+        #y = np.sin(x) + np.random.normal(0, 0.1, 100)
         
-        ax.plot(x, y, label="Sin Waves with Noise", color="darkcyan")
-        ax.set_title("Dynamic Data Visualization")
-        ax.set_xlabel("X Axis")
-        ax.set_ylabel("Y Axis")
-        ax.legend()
+        ax.set_xlabel('time (ms)')
+        ax.set_ylabel('Probability density')
+        ax.set_title(f'Histogram of Read Timing')
+        #ax.plot(x, y, label="Sin Waves with Noise", color="darkcyan")
+        #ax.set_title("Dynamic Data Visualization")
+        #ax.set_xlabel("X Axis")
+        #ax.set_ylabel("Y Axis")
+        #ax.legend()
         ax.grid(True)
 
         # CRITICAL: Redraw the canvas to apply changes
         self.canvas.draw()
+        
+    @Slot(int)
+    def update_progress(self, value):
+        self.progress_bar.setValue(value)
+
+    @Slot(str)
+    def on_task_finished(self, result_message):
+        self.label.setText(result_message)
+        self.btn_start.setEnabled(True)
+
+    def closeEvent(self, event):
+        # 1. Проверяем, существуют ли атрибуты в Python
+        if hasattr(self, 'worker') and hasattr(self, 'thread'):
+            # 2. Проверяем, живы ли еще реальные C++ объекты внутри Qt
+            if Shiboken.isValid(self.thread) and Shiboken.isValid(self.worker):
+                # 3. Только если они живы И поток все еще работает, останавливаем его
+                if self.thread.isRunning():
+                    self.worker.stop()
+                    self.thread.quit()
+                    self.thread.wait()
+        event.accept()
+ 
+    def timer_handler(self):
+        print('timer')
+        self.request_array.emit()
+        #self.plot_data()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 import time
 import tango
-"""
-Created on Oct 15, 2026
-
-@author: sanin
-"""
-
 import sys
-
 from PyQt5.QtWidgets import QApplication
 from PyQt5 import uic
 from PyQt5.QtCore import QTimer
-
-from TangoWidgets.TangoWidget import TangoWidget
-from TangoWidgets.TangoLED import TangoLED
-from TangoWidgets.TangoLabel import TangoLabel
-from TangoWidgets.TangoAbstractSpinBox import TangoAbstractSpinBox
-from TangoWidgets.TangoPushButton import TangoPushButton
-from TangoWidgets.TangoAttribute import TangoAttribute
-from TangoWidgets.Utils import *
 
 from config_logger import config_logger
 
@@ -99,7 +231,6 @@ CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 UI_FILE = APPLICATION_NAME_SHORT + '.ui'
 
 # Globals
-TIMER_PERIOD = 500  # ms
 
 
 class MainWindow(QMainWindow):
