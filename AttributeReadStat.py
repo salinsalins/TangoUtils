@@ -6,6 +6,8 @@ Created on Oct 15, 2026
 """
 
 import sys
+import os
+import logging
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,12 +18,15 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt import NavigationToolbar2QT as NavigationToolbar
 from shiboken6 import Shiboken 
 
-import logging
 from config_logger import config_logger
 
 import tango
 
-TIMER_PERIOD = 1000  # ms
+APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
+APPLICATION_NAME_SHORT = APPLICATION_NAME
+APPLICATION_VERSION = '1.0'
+CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
+TIMER_PERIOD = 2000  # ms
 
 # 1. Создаем класс-рабочий (Worker), наследуясь от QObject
 class TaskWorker(QObject):
@@ -29,42 +34,43 @@ class TaskWorker(QObject):
     progress_changed = Signal(int)    # Передает процент выполнения (0-100)
     task_finished = Signal(str)       # Передает результат по окончании
     # Сигнал для отправки массива (списка) обратно в UI
-    array_ready = Signal(list)
+    # array_ready = Signal(list)
 
-    def __init__(self, device = "sys/tg_test/1", attribute = "double_scalar"):
-
+    def __init__(self, data: list, device = "sys/tg_test/1", attribute = "double_scalar"):
         super().__init__()
         self._is_running = True
+        self.y = data
         self.device = device
         self.atribute = attribute
         self.dp = tango.DeviceProxy(device)
-        self.n = 5000
-        self.y = np.zeros(self.n)
+        self.n = len(data)
         self.tmin = 1e60
         self.tmax = -1.0
         self.error_count = 0
 
-    @Slot()
-    def send_current_array(self):
-        """Вызывается в произвольный момент по сигналу из UI"""
-        print('sending data')
-        self.array_ready.emit(self.y)
+    # @Slot()
+    # def send_current_array(self):
+    #     """Вызывается в произвольный момент по сигналу из UI"""
+    #     print('sending data')
+    #     #self.array_ready.emit(self.y)
 
     @Slot()
     def run_task(self):
-        """Здесь пишется весь тяжелый код фоновой задачи"""
         print("Фоновое вычисление началось...")
-
         i = 0
         full = False
         while True:
             t0 = time.perf_counter()
             result = self.dp.read_attribute(self.atribute)
-            dt = (time.perf_counter() - t0) * 1000.0
+            dt = (time.perf_counter() - t0) * 1000.0 
+            # x = i * 2.0 * np.pi / self.n
+            # dt = np.sin(x) + 0.05 * np.random.random()
             # v = result.value
             self.y[i] = dt
             i += 1
             if i >= self.n:
+                # Отправляем сигнал в UI с текущим прогрессом
+                self.progress_changed.emit(i)
                 i = 0
                 if not full: print('array is full')
                 full = True
@@ -72,10 +78,7 @@ class TaskWorker(QObject):
             self.tmax = max(self.tmax, dt)
             if not self._is_running:
                 break
-                
-        # Отправляем сигнал в UI с текущим прогрессом
-        #self.progress_changed.emit(i)
-            
+
         if self._is_running:
             self.task_finished.emit("Вычисления успешно завершены!")
         else:
@@ -86,10 +89,13 @@ class TaskWorker(QObject):
 
 class MainWindow(QMainWindow):
     # Сигнал-запрос к воркеру
-    request_array = Signal()
+    # request_array = Signal()
 
     def __init__(self):
         super().__init__()
+        self.y_data = [0] * 5000
+        self.device = "sys/tg_test/1"
+        self.attribute = "double_scalar"
 
         self.logger = config_logger(level=logging.DEBUG)
 
@@ -122,7 +128,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(layout2)
 
         # Initial plot
-        self.plot_data([1,2,3])
+        self.plot_data(self.y_data)
 
         # Defile and start timer callback task
         self.timer = QTimer()
@@ -131,51 +137,69 @@ class MainWindow(QMainWindow):
         self.timer.start(TIMER_PERIOD)
 
         # Шаг А: Создаем поток и рабочего
-        self.thread = QThread()
-        self.worker = TaskWorker()
+        self.my_thread = QThread()
+        self.worker = TaskWorker(self.y_data, self.device, self.attribute)
 
         # Шаг Б: Переносим рабочего в фоновый поток (Важнейший шаг!)
-        self.worker.moveToThread(self.thread)
+        self.worker.moveToThread(self.my_thread)
 
         # Шаг В: Связываем сигналы и слоты
-        self.thread.started.connect(self.worker.run_task) # При старте потока запускаем задачу
+        self.my_thread.started.connect(self.worker.run_task) # При старте потока запускаем задачу
         #self.worker.progress_changed.connect(self.update_progress) # Ловим прогресс
         #self.worker.task_finished.connect(self.on_task_finished)   # Ловим финиш
 
         # Шаг Г: Правильное удаление объектов из памяти после завершения
-        self.worker.task_finished.connect(self.thread.quit)
+        self.worker.task_finished.connect(self.my_thread.quit)
         self.worker.task_finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
+        self.my_thread.finished.connect(self.my_thread.deleteLater)
 
         # Связываем сигналы запроса и ответа
-        self.request_array.connect(self.worker.send_current_array)
-        self.worker.array_ready.connect(self.plot_data)
+        # self.request_array.connect(self.worker.send_current_array)
+        # self.worker.array_ready.connect(self.plot_data)
         
         # Шаг Д: Запускаем поток
-        self.thread.start()
+        self.my_thread.start()
 
-    @Slot(list)
+    def filter_outliers_iqr(self, data, low=25, high=75, range=1.5):
+        data = np.array(data)
+        
+        # 1. Находим 25-й и 75-й процентили
+        q25 = np.percentile(data, low)
+        q75 = np.percentile(data, high)
+        
+        # 2. Вычисляем межквартильный размах (ширину основного ядра данных)
+        iqr = q75 - q25
+        
+        # 3. Определяем границы (классический коэффициент — 1.5)
+        lower_bound = q25 - (range * iqr)
+        upper_bound = q75 + (range * iqr)
+        
+        # 4. Оставляем только те данные, которые попали в границы
+        return data[(data >= lower_bound) & (data <= upper_bound)]
+
     def plot_data(self, data):
-        print('plotting data')
         # Clear the old plot before drawing a new one
         self.figure.clear()
 
         # Create an axis and plot data
         ax = self.figure.add_subplot(111)
         num_bins = 100
-        n, bins, patches = ax.hist(data, num_bins, density=True)
+        plot_data = self.filter_outliers_iqr(self.y_data, low=0)
+        n, bins, patches = ax.hist(plot_data, num_bins, density=True)
         
-        #x = np.linspace(0, 10, 100)
-        #y = np.sin(x) + np.random.normal(0, 0.1, 100)
+        # x = np.linspace(0, 10, 100)
+        # y = np.sin(x) + np.random.normal(0, 0.1, 100)
+        # x = np.linspace(0, 1, len(self.y_data))
+        # y = self.y_data
         
-        ax.set_xlabel('time (ms)')
+        ax.set_xlabel('Read time (ms)')
         ax.set_ylabel('Probability density')
-        ax.set_title(f'Histogram of Read Timing')
-        #ax.plot(x, y, label="Sin Waves with Noise", color="darkcyan")
-        #ax.set_title("Dynamic Data Visualization")
-        #ax.set_xlabel("X Axis")
-        #ax.set_ylabel("Y Axis")
-        #ax.legend()
+        ax.set_title(f'Histogram of Read Timing for {self.device}/{self.attribute}')
+        # ax.plot(x, y, label="Sin Waves with Noise", color="darkcyan")
+        # ax.set_title("Dynamic Data Visualization")
+        # ax.set_xlabel("X Axis")
+        # ax.set_ylabel("Y Axis")
+        # ax.legend()
         ax.grid(True)
 
         # CRITICAL: Redraw the canvas to apply changes
@@ -196,16 +220,14 @@ class MainWindow(QMainWindow):
             # 2. Проверяем, живы ли еще реальные C++ объекты внутри Qt
             if Shiboken.isValid(self.thread) and Shiboken.isValid(self.worker):
                 # 3. Только если они живы И поток все еще работает, останавливаем его
-                if self.thread.isRunning():
-                    self.worker.stop()
-                    self.thread.quit()
-                    self.thread.wait()
+                # if self.thread.isRunning():
+                self.worker.stop()
+                self.my_thread.quit()
+                self.my_thread.wait()
         event.accept()
  
     def timer_handler(self):
-        print('timer')
-        self.request_array.emit()
-        #self.plot_data()
+        self.plot_data(self.y)
 
 
 if __name__ == "__main__":
@@ -215,112 +237,9 @@ if __name__ == "__main__":
     sys.exit(app.exec())
 
 
-import time
-import tango
-import sys
-from PyQt5.QtWidgets import QApplication
-from PyQt5 import uic
-from PyQt5.QtCore import QTimer
-
-from config_logger import config_logger
-
-APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
-APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '1.0'
-CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
-UI_FILE = APPLICATION_NAME_SHORT + '.ui'
-
-# Globals
 
 
-class MainWindow(QMainWindow):
-    def __init__(self, parent=None):
-        # Initialization of the superclass
-        super(MainWindow, self).__init__(parent)
-        # logging config
-        self.logger = config_logger(level=logging.DEBUG)
-        # members definition
-        self.n = 0
-        self.elapsed = 0.0
-        # Load the UI
-        uic.loadUi(UI_FILE, self)
-        # main window parameters
-        self.resize(QSize(480, 640))                 # size
-        self.move(QPoint(50, 50))                    # position
-        self.setWindowTitle(APPLICATION_NAME)        # title
-        self.setWindowIcon(QtGui.QIcon('icon.png'))  # icon
 
-        print(APPLICATION_NAME + ' version ' + APPLICATION_VERSION + ' started')
-
-        restore_settings(self, file_name=CONFIG_FILE)
-
-        # read attributes TangoWidgets list
-        self.rdwdgts = (
-            # lauda
-            TangoLED(self.config.get('pump', 'binp/nbi/lauda/6230_7'), self.pushButton_34),  # Pump On
-            TangoLED(self.config.get('valve_state', 'binp/nbi/lauda/6230_0'), self.pushButton_31),  # Valve
-            TangoLabel(self.config.get('return', 'binp/nbi/lauda/1012'), self.label_23),       # Return
-        )
-        # writable attributes TangoWidgets list
-        self.wtwdgts = (
-            # lauda
-            TangoAbstractSpinBox(self.config.get('setpoint', 'binp/nbi/lauda/6200'), self.spinBox_4, False),  # SetPoint
-            TangoPushButton(self.config.get('valve', 'binp/nbi/lauda/6210_3'), self.pushButton_4, False),  # Valve
-            TangoPushButton(self.config.get('run', 'binp/nbi/lauda/6210_1'), self.pushButton_3, False),  # Run
-            TangoPushButton(self.config.get('enable', 'binp/nbi/lauda/6210_0'), self.pushButton_6, False),  # Enable
-            TangoPushButton(self.config.get('reset', 'binp/nbi/lauda/6210_2'), self.pushButton_9, False),  # Reset
-        )
-        #
-        TangoWidget.RECONNECT_TIMEOUT = 5.0
-        # Connect signals with slots
-        self.pushButton_3.clicked.connect(self.lauda_pump_on_callback)
-        self.spinBox_4.valueChanged.connect(self.setpoint_valueChanged)
-        # lauda device
-        try:
-            self.lauda = self.pushButton_3.tango_widget.attribute.device_proxy
-        except:
-            self.lauda = None
-        # Defile and start timer callback task
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.timer_handler)
-        # start timer
-        self.timer.start(TIMER_PERIOD)
-
-    def setpoint_valueChanged(self):
-        self.lauda.write_attribute(self.config.get('remote', '1100'), self.spinBox_4.value())
-
-    def lauda_pump_on_callback(self, value):
-        if value:
-            # reset
-            self.pushButton_9.tango_widget.pressed()
-            self.pushButton_9.tango_widget.released()
-            # enable
-            self.pushButton_6.setChecked(True)
-            self.pushButton_6.tango_widget.clicked()
-
-    def onQuit(self) :
-        # Save global settings
-        save_settings(self, file_name=CONFIG_FILE)
-        self.timer.stop()
-        
-    def timer_handler(self):
-        t0 = time.time()
-        if len(self.rdwdgts) <= 0 and len(self.wtwdgts) <= 0:
-            return
-        self.elapsed = 0.0
-        count = 0
-        while time.time() - t0 < TIMER_PERIOD/2000.0:
-            if self.n < len(self.rdwdgts) and self.rdwdgts[self.n].widget.isVisible():
-                self.rdwdgts[self.n].update()
-            if self.n < len(self.wtwdgts) and self.wtwdgts[self.n].widget.isVisible():
-                self.wtwdgts[self.n].update(decorate_only=True)
-            self.n += 1
-            if self.n >= max(len(self.rdwdgts), len(self.wtwdgts)):
-                self.n = 0
-            count += 1
-            if count == max(len(self.rdwdgts), len(self.wtwdgts)):
-                self.elapsed = time.time() - self.elapsed
-                return
 
 if __name__ == "__main__":
     # test tango attribute read speed
