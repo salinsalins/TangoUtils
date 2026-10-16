@@ -24,7 +24,7 @@ import tango
 
 APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
 APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '1.1'
+APPLICATION_VERSION = '1.2'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 TIMER_PERIOD = 2000  # ms
 
@@ -48,6 +48,16 @@ class TaskWorker(QObject):
         self.tmax = -1.0
         self.error_count = 0
         self.full = False
+        self.i = 0
+        self.loops = 10
+        self.timer_period = 50 #[ms]
+        self.load = 0.5
+
+        # Defile and start timer callback task
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.timer_handler)
+        # start timer
+        self.timer.start(self.timer_period)
 
     @Slot(int)
     def config_changed(self, period):
@@ -57,7 +67,9 @@ class TaskWorker(QObject):
     @Slot()
     def run_task(self):
         print("Фоновое вычисление началось...")
-        i = 0
+        # self.timer.start(self.timer_period)
+        return
+        # i = 0
         self.full = False
         while True:
             QCoreApplication.processEvents()
@@ -90,6 +102,26 @@ class TaskWorker(QObject):
 
     def stop(self):
         self._is_running = False
+
+    def timer_handler(self):
+        start_time = time.perf_counter()
+        while True:
+        # for i in range(self.loops):
+            t0 = time.perf_counter()
+            result = self.dp.read_attribute(self.atribute)
+            dt = (time.perf_counter() - t0) * 1000.0 
+            self.y[self.i] = dt
+            self.i += 1
+            if self.i >= self.n:
+                # Отправляем сигнал в UI с текущим прогрессом
+                self.progress_changed.emit(self.i)
+                self.i = 0
+                # if not self.full: print('Array is full')
+                self.full = True
+            self.tmin = min(self.tmin, dt)
+            self.tmax = max(self.tmax, dt)
+            if (time.perf_counter() - start_time) > (self.load * self.timer_period / 1000.):
+                return 
 
 class MainWindow(QMainWindow):
     # Сигнал-запрос к воркеру
