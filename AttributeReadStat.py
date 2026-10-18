@@ -27,6 +27,13 @@ APPLICATION_NAME_SHORT = APPLICATION_NAME
 APPLICATION_VERSION = '1.2'
 CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
 TIMER_PERIOD = 2000  # ms
+TANGO_HOST = 'localhost:10000'
+DEVICE_NAME = "sys/tg_test/1"
+ATTRIBUTE_NAME = "double_scalar"
+TIMER_PERIOD = 50 #[ms]
+DUTY_LOAD = 0.5
+ARRAY_SIZE = 5000
+BINS = 100
 
 # 1. Создаем класс-рабочий (Worker), наследуясь от QObject
 class TaskWorker(QObject):
@@ -36,7 +43,7 @@ class TaskWorker(QObject):
     # Сигнал для отправки массива (списка) обратно в UI
     # array_ready = Signal(list)
 
-    def __init__(self, data: list, device = "sys/tg_test/1", attribute = "double_scalar"):
+    def __init__(self, data: list, device = DEVICE_NAME, attribute = ATTRIBUTE_NAME):
         super().__init__()
         self._is_running = True
         self.y = data
@@ -50,8 +57,8 @@ class TaskWorker(QObject):
         self.full = False
         self.i = 0
         self.loops = 10
-        self.timer_period = 50 #[ms]
-        self.load = 0.5
+        self.timer_period = TIMER_PERIOD
+        self.load = DUTY_LOAD
 
         # Defile and start timer callback task
         self.timer = QTimer()
@@ -67,38 +74,7 @@ class TaskWorker(QObject):
     @Slot()
     def run_task(self):
         print("Фоновое вычисление началось...")
-        # self.timer.start(self.timer_period)
         return
-        # i = 0
-        self.full = False
-        while True:
-            QCoreApplication.processEvents()
-            
-            t0 = time.perf_counter()
-            result = self.dp.read_attribute(self.atribute)
-            dt = (time.perf_counter() - t0) * 1000.0 
-            # x = i * 2.0 * np.pi / self.n
-            # dt = np.sin(x) + 0.05 * np.random.random()
-            # v = result.value
-            self.y[i] = dt
-            i += 1
-            if i >= self.n:
-                # Отправляем сигнал в UI с текущим прогрессом
-                self.progress_changed.emit(i)
-                i = 0
-                # if not self.full: print('Array is full')
-                self.full = True
-            self.tmin = min(self.tmin, dt)
-            self.tmax = max(self.tmax, dt)
-            if not self._is_running:
-                break
-            # switch context
-            time.sleep(0)
-
-        if self._is_running:
-            self.task_finished.emit("Вычисления успешно завершены!")
-        else:
-            self.task_finished.emit("Задача была прервана пользователем.")
 
     def stop(self):
         self._is_running = False
@@ -114,7 +90,7 @@ class TaskWorker(QObject):
             self.i += 1
             if self.i >= self.n:
                 # Отправляем сигнал в UI с текущим прогрессом
-                self.progress_changed.emit(self.i)
+                # self.progress_changed.emit(self.i)
                 self.i = 0
                 # if not self.full: print('Array is full')
                 self.full = True
@@ -129,56 +105,46 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-        self.y_data = [0] * 5000
+        self.y_data = [0] * ARRAY_SIZE
         self.prev_y = self.y_data.copy()
-        self.device = "sys/tg_test/1"
-        self.attribute = "double_scalar"
-        self.old_max = -1.0
+        self.device = DEVICE_NAME
+        self.attribute = ATTRIBUTE_NAME
 
         self.logger = config_logger(level=logging.DEBUG)
 
         self.setWindowTitle("Matplotlib inside PyQt5 QMainWindow")
         self.resize(800, 600)
 
-        # 1. Create the main central widget and layout
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
         layout = QVBoxLayout(self.central_widget)
 
-        # 2. Create the Matplotlib Figure and Canvas
-        self.figure = plt.figure() # Or use: self.figure, self.ax = plt.subplots()
+        self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
         
-        # 3. (Optional) Create the Matplotlib Navigation Toolbar
         self.toolbar = NavigationToolbar(self.canvas, self)
 
-        # 4. Create a UI element (e.g., a button to trigger plot updates)
         self.button = QPushButton("Generate Random Plot")
         self.button.clicked.connect(self.plot_data)
         
         self.device_name = QLineEdit("sys/tg_test/1")
-        # Подключаем действие на нажатие Enter
         self.device_name.returnPressed.connect(self.device_submit)    
         
         self.attribute_name = QLineEdit("double_scalar")
-        # Подключаем действие на нажатие Enter
         self.attribute_name.returnPressed.connect(self.attribute_submit)    
         
-        # Создаем поле для ввода целых чисел
         self.period = QSpinBox()
-        # Настройки (необязательно)
-        self.period.setRange(1, 10000)  # Минимальное и максимальное значение
-        self.period.setValue(2000)       # Значение по умолчанию
-        self.period.setSingleStep(100)
+        self.period.setRange(1, TIMER_PERIOD * 10)
+        self.period.setValue(TIMER_PERIOD)
+        self.period.setSingleStep(TIMER_PERIOD // 10)
         self.period.setStepType(QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
-        # Сигнал: срабатывает при нажатии Enter внутри поля
         self.period.editingFinished.connect(self.period_submit)
         # self.period.valueChanged.connect(self.period_submit)
 
-        # 5. Add all widgets to the layout
         layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
         layout.addWidget(self.button)
+
         layout2 = QHBoxLayout()
         layout2.addWidget(QLabel("Period [ms]"))
         layout2.addWidget(self.period)
@@ -260,46 +226,29 @@ class MainWindow(QMainWindow):
 
         # Create an axis and plot data
         ax = self.figure.add_subplot(111)
-        num_bins = 100
-        plot_data = self.filter_outliers_iqr(self.y_data, low=0)
+        num_bins = BINS
+        plot_data = self.filter_outliers_iqr(self.y_data)
         n, bins, patches = ax.hist(self.prev_y, num_bins, density=True)
         n, bins, patches = ax.hist(plot_data, num_bins, density=True)
         self.prev_y = plot_data
-        # new_max = plot_data.max()
-        # if (self.old_max / new_max) < 2.0 and (self.old_max / new_max) > 0.5:
-        #     range = (0., self.old_max)
-        # else:
-        #     range = (0., new_max)
-        #     self.old_max = new_max
-        #     # print('new_max', new_max)
-        # n, bins, patches = ax.hist(plot_data, num_bins, range=range, density=True)
-        
-        # x = np.linspace(0, 10, 100)
-        # y = np.sin(x) + np.random.normal(0, 0.1, 100)
-        # x = np.linspace(0, 1, len(self.y_data))
-        # y = self.y_data
         
         ax.set_xlabel('Read time (ms)')
         ax.set_ylabel('Probability density')
         ax.set_title(f'Histogram of Read Timing for {self.device}/{self.attribute}')
-        # ax.plot(x, y, label="Sin Waves with Noise", color="darkcyan")
-        # ax.set_title("Dynamic Data Visualization")
-        # ax.set_xlabel("X Axis")
-        # ax.set_ylabel("Y Axis")
         ax.legend(labels=['Previous', 'Curernt'])
         ax.grid(True)
 
         # CRITICAL: Redraw the canvas to apply changes
         self.canvas.draw()
         
-    @Slot(int)
-    def update_progress(self, value):
-        self.progress_bar.setValue(value)
+    # @Slot(int)
+    # def update_progress(self, value):
+    #     self.progress_bar.setValue(value)
 
-    @Slot(str)
-    def on_task_finished(self, result_message):
-        self.label.setText(result_message)
-        self.btn_start.setEnabled(True)
+    # @Slot(str)
+    # def on_task_finished(self, result_message):
+    #     self.label.setText(result_message)
+    #     self.btn_start.setEnabled(True)
 
     def closeEvent(self, event):
         # 1. Проверяем, существуют ли атрибуты в Python
@@ -318,6 +267,8 @@ class MainWindow(QMainWindow):
 
 
 if __name__ == "__main__":
+    if 'TANGO_HOST' not in os.environ:
+        os.environ['TANGO_HOST'] = TANGO_HOST
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
