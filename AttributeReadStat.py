@@ -19,6 +19,7 @@ from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt import NavigationToolbar2QT as NavigationToolbar
 from shiboken6 import Shiboken 
 
+from TangoUtils import tango_exception_description, tango_exception_reason
 from config_logger import config_logger
 
 import tango
@@ -46,6 +47,7 @@ class TaskWorker(QObject):
 
     def __init__(self, data: list, attribute = ATTRIBUTE_NAME):
         super().__init__()
+        self.logger = config_logger()
         self._is_running = True
         self.y = data
         self.n = len(data)
@@ -97,6 +99,11 @@ class TaskWorker(QObject):
                     dt = (t1 - t0) * 1000.0 
                 except KeyboardInterrupt:
                     raise
+                except tango.DevFailed as ex:
+                    dt = (time.perf_counter() - t0) * 1000.0 
+                    print(tango_exception_reason())
+                    print(tango_exception_description())
+                    log_exception('ERROR attribute reading')
                 except:
                     dt = (time.perf_counter() - t0) * 1000.0 
                     print('ERROR reading after', dt)
