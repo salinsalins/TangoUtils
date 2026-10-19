@@ -8,6 +8,7 @@ Created on Oct 15, 2026
 import sys
 import os
 import logging
+import threading
 import time
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,10 +25,9 @@ import tango
 
 from log_exception import log_exception
 
-APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
-APPLICATION_NAME_SHORT = APPLICATION_NAME
-APPLICATION_VERSION = '1.2'
-CONFIG_FILE = APPLICATION_NAME_SHORT + '.json'
+# APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
+# CONFIG_FILE = APPLICATION_NAME + '.json'
+APPLICATION_VERSION = '1.3'
 PLOT_TIMER_PERIOD = 2000  # ms
 TANGO_HOST = 'localhost:10000'
 ATTRIBUTE_NAME = "sys/tg_test/1/double_scalar"
@@ -88,17 +88,20 @@ class TaskWorker(QObject):
     def timer_handler(self):
         start_time = time.perf_counter()
         while True:
-            t0 = time.perf_counter()
-            try:
-                result = self.dp.read_attribute(self.atribute_name)
-            except KeyboardInterrupt:
-                raise
-            except:
-                dt = (time.perf_counter() - t0) * 1000.0 
-                print('ERROR reading after', dt)
-                log_exception('ERROR attribute reading')
-                self.error_count += 1
-            dt = (time.perf_counter() - t0) * 1000.0 
+            with lock:
+                t0 = time.perf_counter()
+                try:
+                    t0 = time.perf_counter()
+                    result = self.dp.read_attribute(self.atribute_name)
+                    t1 = time.perf_counter()
+                    dt = (t1 - t0) * 1000.0 
+                except KeyboardInterrupt:
+                    raise
+                except:
+                    dt = (time.perf_counter() - t0) * 1000.0 
+                    print('ERROR reading after', dt)
+                    log_exception('ERROR attribute reading')
+                    self.error_count += 1
             self.y[self.i] = dt
             self.i += 1
             if dt > self.timer_period / 5:
@@ -108,9 +111,9 @@ class TaskWorker(QObject):
                 # self.progress_changed.emit(self.i)
                 self.i = 0
                 self.full = True
-                print('Array iz full')
+                # print('Array iz full')
             if (time.perf_counter() - start_time) > (self.load * self.timer_period / 1000.):
-                print(self.i)
+                # print(self.i)
                 return 
 
 class MainWindow(QMainWindow):
@@ -121,13 +124,13 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.array_size = ARRAY_SIZE
         self.y_data = [-1.0] * self.array_size
-        self.prev_y = self.y_data.copy()
+        self.prev_y = [0.0, 0.0]
         self.attribute_name = ATTRIBUTE_NAME
 
         self.logger = config_logger(level=logging.DEBUG)
 
-        self.setWindowTitle("Matplotlib inside PyQt5 QMainWindow")
-        self.resize(800, 600)
+        self.setWindowTitle(f"Tango Attribute {self.attribute_name} Read Timing")
+        self.resize(1200, 600)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
@@ -135,11 +138,12 @@ class MainWindow(QMainWindow):
 
         self.figure = plt.figure()
         self.canvas = FigureCanvas(self.figure)
+        self.figure.suptitle(f'Histogram of Read Timing for {self.attribute_name}')
         
-        self.toolbar = NavigationToolbar(self.canvas, self)
+        # self.toolbar = NavigationToolbar(self.canvas, self)
 
-        self.button = QPushButton("Generate Random Plot")
-        self.button.clicked.connect(self.plot_data)
+        # self.button = QPushButton("Generate Random Plot")
+        # self.button.clicked.connect(self.plot_data)
         
         self.attribute = QLineEdit(self.attribute_name)
         self.attribute.returnPressed.connect(self.attribute_submit)    
@@ -159,9 +163,9 @@ class MainWindow(QMainWindow):
         self.array.setStepType(QAbstractSpinBox.StepType.AdaptiveDecimalStepType)
         # self.period.editingFinished.connect(self.period_submit)
 
-        layout.addWidget(self.toolbar)
+        # layout.addWidget(self.toolbar)
         layout.addWidget(self.canvas)
-        layout.addWidget(self.button)
+        # layout.addWidget(self.button)
 
         layout2 = QHBoxLayout()
         layout2.addWidget(QLabel("Array Size:"))
@@ -237,37 +241,46 @@ class MainWindow(QMainWindow):
         return data[(data >= lower_bound) & (data <= upper_bound)]
 
     def plot_data(self, data):
-        # Clear the old plot before drawing a new one
-        self.figure.clear()
+        with lock:
+            # Clear the old plot before drawing a new one
+            self.figure.clear()
 
-        num_bins = BINS
-        self.figure.suptitle(f'Histogram of Read Timing for {self.attribute_name}')
+            num_bins = BINS
 
-        # Create an axis and plot data
-        # ax = self.figure.add_subplot(111)
-        ax = self.figure.add_subplot(121)
-        plot_data = self.filter_outliers_iqr(self.y_data)
-        # n, bins, patches = ax.hist(self.prev_y, num_bins)
-        n, bins, patches = ax.hist(plot_data, num_bins)
-        # self.prev_y = plot_data
-        ax.set_xlabel('Read time (ms)')
-        ax.set_ylabel('Number of Counts')
-        ax.set_title('Lower 75%')
-        # ax.legend(labels=['Previous', 'Curernt'])
-        ax.grid(True)
+            # Create an axis and plot data
+            ax = self.figure.add_subplot(121)
+            plot_data = self.filter_outliers_iqr(self.y_data)
+            n, bins, patches = ax.hist(self.prev_y, num_bins)
+            n, bins, patches = ax.hist(plot_data, num_bins)
+            self.prev_y = plot_data
+            ax.set_xlabel('Read time (ms)')
+            ax.set_ylabel('Number of Counts')
+            ax.set_title('Main part (75%)')
+            ax.legend(labels=['Previous', 'Curernt'])
+            ax.grid(True)
 
-        x_min, x_max = ax.get_xlim()
-        plot_data2 = np.array(self.y_data)
-        plot_data2 = plot_data2[plot_data2 > (x_max * 2.1)]
-        if len(plot_data2) > 1:
-            ax2 = self.figure.add_subplot(122)
-            n, bins, patches = ax2.hist(plot_data2, num_bins)
-            ax2.set_xlabel('Read time (ms)')
-            ax2.set_title(f'Longer Reads')
-            ax2.grid(True)
+            x_min, x_max = ax.get_xlim()
+            plot_data2 = np.array(self.y_data)
+            plot_data2 = plot_data2[plot_data2 > (x_max * 2.1)]
+            if len(plot_data2) > 1:
+                ax2 = self.figure.add_subplot(122)
+                n, bins, patches = ax2.hist(plot_data2, num_bins)
+                ax2.set_xlabel('Read time (ms)')
+                ax2.set_title(f'Longer Reads')
+                ax2.grid(True)
+            else:
+                ax = self.figure.add_subplot(111)
+                n, bins, patches = ax.hist(self.prev_y, num_bins)
+                n, bins, patches = ax.hist(plot_data, num_bins)
+                ax.set_xlabel('Read time (ms)')
+                ax.set_ylabel('Number of Counts')
+                ax.set_title('Main part (75%)')
+                ax.legend(labels=['Previous', 'Curernt'])
+                ax.grid(True)
 
-        # CRITICAL: Redraw the canvas to apply changes
-        self.canvas.draw()
+
+            # CRITICAL: Redraw the canvas to apply changes
+            self.canvas.draw()
         
     # @Slot(int)
     # def update_progress(self, value):
@@ -297,6 +310,7 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     if 'TANGO_HOST' not in os.environ:
         os.environ['TANGO_HOST'] = TANGO_HOST
+    lock = threading.Lock()
     app = QApplication(sys.argv)
     window = MainWindow()
     window.show()
