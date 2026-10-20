@@ -13,7 +13,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 # Вместо PyQt5 используем PySide6
-from PySide6.QtWidgets import QAbstractSpinBox, QApplication, QLabel, QLineEdit, QMainWindow, QSpinBox, QWidget, QHBoxLayout, QVBoxLayout, QPushButton
+from PySide6.QtWidgets import QAbstractSpinBox, QApplication, QLabel, QLineEdit, QMainWindow, QMessageBox, QSpinBox, QWidget, QHBoxLayout, QVBoxLayout, QPushButton
 from PySide6.QtCore import QCoreApplication, QTimer, QObject, QThread, Signal, Slot
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt import NavigationToolbar2QT as NavigationToolbar
@@ -28,7 +28,7 @@ from log_exception import log_exception
 
 # APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
 # CONFIG_FILE = APPLICATION_NAME + '.json'
-APPLICATION_VERSION = '1.3'
+APPLICATION_VERSION = '2.0'
 PLOT_TIMER_PERIOD = 2000  # ms
 TANGO_HOST = 'localhost:10000'
 ATTRIBUTE_NAME = "sys/tg_test/1/double_scalar"
@@ -55,19 +55,42 @@ class TaskWorker(QObject):
         self.full = False
         self.atribute_name = attribute.split('/')[-1]
         self.device_name = attribute.replace('/' + self.atribute_name, '')
-        print(self.device_name, self.atribute_name)
         try:
             self.dp = tango.DeviceProxy(self.device_name)
+            self.dp.ping()
         except KeyboardInterrupt:
             raise
-        except:
-            # print('ERROR creating device proxy')
-            log_exception('ERROR creating device proxy')
-        # self.tmin = 1e100
-        # self.tmax = -1.0
+        except tango.DevFailed as e:
+            log_exception()
+            txt = tango_exception_description(e)
+            QMessageBox.critical(None, 'Device is unreachable',
+                                 txt + '\nProgram will quit.', QMessageBox.StandardButton.Ok)
+            exit(-111)
         self.error_count = 0
         self.timer_period = TIMER_PERIOD
         self.load = DUTY_LOAD
+        self.tmin = 1e100
+        self.tmax = -1.0
+        # test run
+        total_dt = 0.0
+        n = 10
+        print(f'Starting {n} test reading sycles ...')
+        for i in range(10):
+            dt = self.read_attribute()
+            if dt < 0.0:
+                txt = tango_exception_description()
+                QMessageBox.critical(None, 'Attribute read error',
+                                    txt + '\nProgram will quit.', QMessageBox.StandardButton.Ok)
+                exit(-111)
+            self.tmin = min(self.tmin, dt)
+            self.tmax = max(self.tmax, dt)
+            total_dt += dt
+        if self.tmax > TIMER_PERIOD * DUTY_LOAD:
+            print('TIMER_PERIOD is too small, need to be more than', self.tmax / DUTY_LOAD)
+            exit(-111)
+        print('Read test finished, timings [ms]')
+        print('min', self.tmin, 'max', self.tmax, 'avg', total_dt / n)
+
         # Defile and start timer callback task
         self.timer = QTimer()
         self.timer.timeout.connect(self.timer_handler)
@@ -75,17 +98,36 @@ class TaskWorker(QObject):
         self.timer.start(self.timer_period)
 
     @Slot(int)
-    def config_changed(self, period):
+    def config_changed(self, value):
         """Вызывается в произвольный момент по сигналу из UI"""
-        print('Reseived', period)
+        print('Reseived', value)
 
     @Slot()
     def run_task(self):
-        print("Фоновое вычисление началось...")
         return
 
     def stop(self):
         self._is_running = False
+
+    def read_attribute(self):
+        start_time = time.perf_counter()
+        with lock:
+            t0 = time.perf_counter()
+            try:
+                t0 = time.perf_counter()
+                result = self.dp.read_attribute(self.atribute_name)
+                t1 = time.perf_counter()
+                dt = (t1 - t0) * 1000.0 
+            except KeyboardInterrupt:
+                raise
+            except tango.DevFailed as e:
+                dt = (time.perf_counter() - t0) * -1000.0 
+                # desc = tango_exception_description(e)
+                log_exception('ERROR attribute reading')
+            except:
+                dt = (time.perf_counter() - t0) * -1000.0 
+                log_exception('Unexpected ERROR attribute reading')
+            return dt
 
     def timer_handler(self):
         start_time = time.perf_counter()
