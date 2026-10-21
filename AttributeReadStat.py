@@ -29,12 +29,14 @@ from log_exception import log_exception
 # APPLICATION_NAME = os.path.basename(__file__).replace('.py', '')
 # CONFIG_FILE = APPLICATION_NAME + '.json'
 APPLICATION_VERSION = '2.0'
-PLOT_TIMER_PERIOD = 2000  # ms
+
+# parameters
 TANGO_HOST = 'localhost:10000'
 ATTRIBUTE_NAME = "sys/tg_test/1/double_scalar"
-TIMER_PERIOD = 150 #[ms]
+TIMER_PERIOD = 150 # ms
 DUTY_LOAD = 0.5
-ARRAY_SIZE = 5000
+ARRAY_SIZE = 2000
+PLOT_TIMER_PERIOD = 2000  # ms
 BINS = 100
 
 # 1. Создаем класс-рабочий (Worker), наследуясь от QObject
@@ -75,10 +77,10 @@ class TaskWorker(QObject):
         total_dt = 0.0
         n = 10
         print(f'Starting {n} test reading sycles ...')
-        for i in range(10):
-            dt = self.read_attribute()
-            if dt < 0.0:
-                txt = tango_exception_description()
+        for i in range(n):
+            dt, result, ex = self.read_attribute()
+            if ex is not None:
+                txt = tango_exception_description(ex)
                 QMessageBox.critical(None, f'Attribute {self.atribute_name} read error',
                                     txt + '\nProgram will quit.', QMessageBox.StandardButton.Ok)
                 exit(-111)
@@ -110,7 +112,8 @@ class TaskWorker(QObject):
         self._is_running = False
 
     def read_attribute(self):
-        start_time = time.perf_counter()
+        result = None
+        ex = None
         with lock:
             t0 = time.perf_counter()
             try:
@@ -118,16 +121,17 @@ class TaskWorker(QObject):
                 result = self.dp.read_attribute(self.atribute_name)
                 t1 = time.perf_counter()
                 dt = (t1 - t0) * 1000.0 
+                return dt, result, ex
             except KeyboardInterrupt:
                 raise
-            except tango.DevFailed as e:
-                dt = (time.perf_counter() - t0) * -1000.0 
-                # desc = tango_exception_description(e)
+            except tango.DevFailed as ex:
+                dt = (time.perf_counter() - t0) * 1000.0 
                 log_exception('ERROR attribute reading')
-            except:
-                dt = (time.perf_counter() - t0) * -1000.0 
+                return dt, result, ex
+            except Exception as ex:
+                dt = (time.perf_counter() - t0) * 1000.0 
                 log_exception('Unexpected ERROR attribute reading')
-            return dt
+                return dt, result, ex
 
     def timer_handler(self):
         start_time = time.perf_counter()
@@ -143,12 +147,9 @@ class TaskWorker(QObject):
                     raise
                 except tango.DevFailed as ex:
                     dt = (time.perf_counter() - t0) * 1000.0 
-                    print(tango_exception_reason())
-                    print(tango_exception_description())
                     log_exception('ERROR attribute reading')
                 except:
                     dt = (time.perf_counter() - t0) * 1000.0 
-                    print('ERROR reading after', dt)
                     log_exception('ERROR attribute reading')
                     self.error_count += 1
             self.y[self.i] = dt
