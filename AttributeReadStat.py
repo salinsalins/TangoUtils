@@ -63,7 +63,7 @@ class TaskWorker(QObject):
         except tango.DevFailed as e:
             log_exception()
             txt = tango_exception_description(e)
-            QMessageBox.critical(None, 'Device is unreachable',
+            QMessageBox.critical(None, f'Device {self.device_name} is unreachable',
                                  txt + '\nProgram will quit.', QMessageBox.StandardButton.Ok)
             exit(-111)
         self.error_count = 0
@@ -79,7 +79,7 @@ class TaskWorker(QObject):
             dt = self.read_attribute()
             if dt < 0.0:
                 txt = tango_exception_description()
-                QMessageBox.critical(None, 'Attribute read error',
+                QMessageBox.critical(None, f'Attribute {self.atribute_name} read error',
                                     txt + '\nProgram will quit.', QMessageBox.StandardButton.Ok)
                 exit(-111)
             self.tmin = min(self.tmin, dt)
