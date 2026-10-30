@@ -130,8 +130,8 @@ class TangoServerPrototype(Device):
             self.init_da = True
         super().delete_device()
 
-    def set_config(self):
-        return
+    def set_config(self) -> bool:
+        return True
 
     # region ******** attribute r/w procedures ***********
     # def read_file_modified_time(self):

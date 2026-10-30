@@ -52,6 +52,7 @@ class TaskWorker(QObject):
         self.logger = config_logger()
         self._is_running = True
         self.y = data
+        # self.err = data.copy()
         self.n = len(data)
         self.i = 0
         self.full = False
@@ -136,23 +137,9 @@ class TaskWorker(QObject):
     def timer_handler(self):
         start_time = time.perf_counter()
         while True:
-            with lock:
-                t0 = time.perf_counter()
-                try:
-                    t0 = time.perf_counter()
-                    result = self.dp.read_attribute(self.atribute_name)
-                    t1 = time.perf_counter()
-                    dt = (t1 - t0) * 1000.0 
-                except KeyboardInterrupt:
-                    raise
-                except tango.DevFailed as ex:
-                    dt = (time.perf_counter() - t0) * 1000.0 
-                    log_exception('ERROR attribute reading')
-                except:
-                    dt = (time.perf_counter() - t0) * 1000.0 
-                    log_exception('ERROR attribute reading')
-                    self.error_count += 1
+            dt, result, ex = self.read_attribute()
             self.y[self.i] = dt
+            # self.err[self.i] = ex is not None
             self.i += 1
             if dt > self.timer_period / 5:
                 print('Long reading time', dt)
