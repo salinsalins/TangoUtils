@@ -1,6 +1,7 @@
 /.idea/
-/Sniffer.json
-/Terminal.json
 __pycache__/
 .vscode/
 *.code-workspace
+*.json
+.*/
+.*
