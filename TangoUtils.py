@@ -33,21 +33,25 @@ class TangoLogHandler(logging.Handler):
 
     def emit(self, record: logging.LogRecord):
         level = record.levelno
+        log_entry = self.format(record)
+        # print('Log entry start ===================')
+        # print(log_entry)
+        # print('Log entry end =====================')
         try:
             if level >= logging.CRITICAL:
-                log_entry = self.format(record)
+                # log_entry = self.format(record)
                 self.device.fatal_stream(log_entry)
                 # self.device.get_logger().fatal(log_entry)
             elif level >= logging.WARNING:
-                log_entry = self.format(record)
+                # log_entry = self.format(record)
                 self.device.error_stream(log_entry)
                 # self.device.get_logger().error(log_entry)
             elif level >= logging.INFO:
-                log_entry = self.format(record)
+                # log_entry = self.format(record)
                 self.device.info_stream(log_entry)
                 # self.device.get_logger().info(log_entry)
             elif level >= logging.DEBUG:
-                log_entry = self.format(record)
+                # log_entry = self.format(record)
                 self.device.debug_stream(log_entry)
                 # self.device.get_logger().debug(log_entry)
         except KeyboardInterrupt:
