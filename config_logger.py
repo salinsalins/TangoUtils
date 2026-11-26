@@ -3,7 +3,7 @@ from log_exception import *
 
 # log format string with process id and thread id
 LOG_FORMAT_STRING = '%(asctime)s,%(msecs)3d %(levelname)-7s [%(process)d:%(thread)d] %(filename)s ' \
-                    '%(funcName)s(%(lineno)s) %(message)s'
+                    '%(funcName)s(%(lineno)s) \n       %(message)s'
 # log format string without process id and thread id
 LOG_FORMAT_STRING_SHORT = '%(asctime)s,%(msecs)3d %(levelname)-7s %(filename)s %(funcName)s(%(lineno)s) %(message)s'
 

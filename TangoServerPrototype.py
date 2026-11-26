@@ -102,7 +102,7 @@ class TangoServerPrototype(Device):
         self.properties = TangoDeviceProperties(self.name)
         self.read_config_from_properties()
         # dictionary for created attributes
-        self.dynamic_attributes = {}
+        self.dynamic_attributes = ThreadSafeDict({})
         if not hasattr(self, 'init_count'):
             self.init_count = -1
         self.init_count += 1
