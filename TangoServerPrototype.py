@@ -4,12 +4,13 @@
 Prototype for Python based tango device server
 A. L. Sanin, started 05.07.2021
 """
+import os
+import sys
+if os.path.realpath('../TangoUtils') not in sys.path: sys.path.append(os.path.realpath('../TangoUtils'))
+
 import collections
 import io
-import sys
-
 import logging
-import os
 import time
 from multiprocessing import Lock
 from threading import RLock
@@ -21,8 +22,6 @@ from tango.server import Device, attribute, command
 import webbrowser
 
 from ThreadSafeDict import ThreadSafeDict
-
-if os.path.realpath('../TangoUtils') not in sys.path: sys.path.append(os.path.realpath('../TangoUtils'))
 from Configuration import Configuration
 from TangoUtils import TangoLogHandler, TANGO_LOG_LEVELS, TangoDeviceProperties
 from config_logger import config_logger, LOG_FORMAT_STRING
@@ -521,8 +520,9 @@ class TangoServerPrototype(Device):
         #     self.dlh = self.logger.tango_dlh
         #     return
         self.dlh = DequeLogHandler(maxlen)
-        # filter messages for given device only
         self.logger.addHandler(self.dlh)
+        # filter messages for given device only
+        self.dlh.addFilter(IdFilter(id(self)))
         # self.logger.tango_dlh = self.dlh
 
     def configure_tango_logging(self):
