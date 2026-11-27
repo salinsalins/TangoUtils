@@ -380,7 +380,7 @@ class TangoServerPrototype(Device):
         sl = kwargs.pop('stacklevel', 1)
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
             kwargs['stacklevel'] = sl + 2
-        self.logger.log(level, message, extra={"target_ip": self.ip}, *args, **kwargs)
+        self.logger.log(level, message, extra={"self_id": id(self)}, *args, **kwargs)
 
     def log_debug(self, message='', *args, **kwargs):
         self._log(logging.DEBUG, message, *args, **kwargs)
@@ -517,13 +517,13 @@ class TangoServerPrototype(Device):
             self.config.read(file_name)
 
     def configure_deque_logging(self, maxlen=100):
-        if hasattr(self.logger, 'tango_dlh'):
-            self.dlh = self.logger.tango_dlh
-            return
+        # if hasattr(self.logger, 'tango_dlh'):
+        #     self.dlh = self.logger.tango_dlh
+        #     return
         self.dlh = DequeLogHandler(maxlen)
         # filter messages for given device only
         self.logger.addHandler(self.dlh)
-        self.logger.tango_dlh = self.dlh
+        # self.logger.tango_dlh = self.dlh
 
     def configure_tango_logging(self):
         # add logging to TLS
@@ -634,15 +634,15 @@ def post_init_callback():
         v = TangoServerPrototype.devices[dev]
         v.restore_polling()
 
-class IpFilter(logging.Filter):
-    def __init__(self, ip: str):
+class IdFilter(logging.Filter):
+    def __init__(self, self_id: int):
         super().__init__()
-        self.target_ip = ip
+        self.self_id = self_id
 
     def filter(self, record: logging.LogRecord) -> bool:
         # 1. Проверяем, передан ли user_id через параметр extra
-        target_ip = getattr(record, "target_ip", '')
-        result = not target_ip or target_ip == self.target_ip
+        self_id = getattr(record, "self_id", None)
+        result = self_id is None or self_id == self.self_id
         return result
 
 
