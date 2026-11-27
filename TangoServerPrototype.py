@@ -92,6 +92,7 @@ class TangoServerPrototype(Device):
         # default logger
         self.logger = config_logger(level=logging.INFO)
         # logging to deque
+        self.ip = ''
         self.dlh = None
         self.configure_deque_logging(LOG_LIST_LENGTH)
         # default configuration
@@ -379,7 +380,7 @@ class TangoServerPrototype(Device):
         sl = kwargs.pop('stacklevel', 1)
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
             kwargs['stacklevel'] = sl + 2
-        self.logger.log(level, message, *args, **kwargs)
+        self.logger.log(level, message, extra={"target_ip": self.ip}, *args, **kwargs)
 
     def log_debug(self, message='', *args, **kwargs):
         self._log(logging.DEBUG, message, *args, **kwargs)
@@ -520,6 +521,7 @@ class TangoServerPrototype(Device):
             self.dlh = self.logger.tango_dlh
             return
         self.dlh = DequeLogHandler(maxlen)
+        # filter messages for given device only
         self.logger.addHandler(self.dlh)
         self.logger.tango_dlh = self.dlh
 
@@ -632,13 +634,25 @@ def post_init_callback():
         v = TangoServerPrototype.devices[dev]
         v.restore_polling()
 
+class IpFilter(logging.Filter):
+    def __init__(self, ip: str):
+        super().__init__()
+        self.target_ip = ip
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        # 1. Проверяем, передан ли user_id через параметр extra
+        target_ip = getattr(record, "target_ip", '')
+        result = not target_ip or target_ip == self.target_ip
+        return result
+
 
 class DequeLogHandler(logging.Handler):
     def __init__(self, maxlen=100, level=logging.DEBUG, formatter=None):
         super().__init__(level)
         self.deque = collections.deque(maxlen=maxlen)
-        self.my_lock123 = Lock()
-        with self.my_lock123:
+        self._lock = RLock()
+        self.ip = None
+        with self._lock:
             if formatter is None:
                 try:
                     self.setFormatter(config_logger.log_formatter)
@@ -658,17 +672,12 @@ class DequeLogHandler(logging.Handler):
 
     def emit(self, record):
         log_entry = self.format(record)
-        self.deque.append(log_entry)
+        with self._lock:
+            self.deque.append(log_entry)
 
     def get_value(self):
-        # with self._lock:
-            # for i in self.deque:
-            #     if i:
-            #         print(i)
-        # print('exit2', self._lock)
-        #     return self.deque[0]
-        return list(self.deque)
-
+        with self._lock:
+            return list(self.deque)
 
 if __name__ == "__main__":
     print('Do not run TangoServerPrototype device directly')
